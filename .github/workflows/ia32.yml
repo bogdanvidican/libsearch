@@ -1,0 +1,38 @@
+# Builds the linux-ia32 app and tests it in an i386 Ubuntu 16.04 container. GitHub's runners are x86_64, so the
+# 32-bit code runs natively (no QEMU): the indexer (pdftotext) and the Electron window are tested for real here,
+# which the Apple Silicon Mac cannot do. The closest thing to the CF-30 short of the CF-30 itself.
+name: ia32 (Ubuntu 16.04 i386)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install pdftotext (host index build)
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - run: npm ci
+      - name: Typecheck + unit/integration tests
+        run: npm run check
+      - name: Package linux-ia32 and test in i386 Ubuntu 16.04
+        run: bash scripts/docker-ia32-test.sh --repackage
+      - name: Keep test logs and the packaged tarball
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: library-search-ia32
+          path: |
+            dist/docker-ia32/
+            dist/library-search-linux-ia32-v*.tar.gz
+            dist/library-search-linux-ia32-v*.tar.gz.sha256
+          retention-days: 14

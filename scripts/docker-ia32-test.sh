@@ -35,7 +35,11 @@ if [ -d tests/fixtures/library ] && [ -f "$IDX" ] && [ "$(wc -c <"$IDX")" -gt 20
 else
   echo "host index skipped (no fixtures, placeholder indexer or no pdftotext)"
 fi
-docker run --rm --platform linux/386 --shm-size=1g \
+# On an x86_64 host (Linux CI, Intel Mac) i386 code runs natively: no QEMU limits, so every step is strict.
+NATIVE=""
+case "$(uname -m)" in x86_64|amd64) NATIVE=1;; esac
+[ -n "$NATIVE" ] && echo "x86_64 host: running natively (indexer + GUI steps are strict)"
+docker run --rm --platform linux/386 --shm-size=1g -e NATIVE="$NATIVE" \
   --mount "type=bind,source=$APPDIR,target=/w,readonly" \
   --mount "type=bind,source=$OUT,target=/out" \
   "$IMAGE" bash /w/scripts/docker/in-container-test.sh

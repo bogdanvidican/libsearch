@@ -72,7 +72,7 @@ else
     rc=$?
     last="$(grep '"type":"progress"' "$OUT/indexer.log" | tail -n 1)"
     if [ $rc -eq 0 ] && printf '%s' "$last" | grep -q '"phase":"done"'; then ok "ia32 indexer finished in $(( $(date +%s) - T0 ))s: $(printf '%s' "$last" | cut -c1-200)"
-    elif grep -q 'qemu: uncaught target signal' "$OUT/indexer.log"; then note "ia32 indexer crashed inside QEMU when starting pdftotext (exit $rc) - known QEMU user-mode limit; verify on the CF-30"
+    elif [ -z "$NATIVE" ] && grep -q 'qemu: uncaught target signal' "$OUT/indexer.log"; then note "ia32 indexer crashed inside QEMU when starting pdftotext (exit $rc) - known QEMU user-mode limit; verify on the CF-30"
     else bad "ia32 indexer exit $rc: $(tail -n 3 "$OUT/indexer.log" | cut -c1-300)"; fi
   fi
 
@@ -117,6 +117,7 @@ section "(e) GUI self-test under Xvfb (informational)"
 mkdir -p /tmp/lib /tmp/data
 GUI_VARIANTS=("--disable-gpu --no-sandbox" "--disable-gpu --no-sandbox --in-process-gpu --no-zygote --single-process")
 if ! is_real "$APPRES/build/main/main.js"; then note "GUI skipped: main.js in the package is still a placeholder"; GUI_VARIANTS=(); fi
+GUI_OK=""
 for variant in "${GUI_VARIANTS[@]}"; do
   T0=$(date +%s)
   # shellcheck disable=SC2086
@@ -125,10 +126,15 @@ for variant in "${GUI_VARIANTS[@]}"; do
   rc=$?
   secs=$(( $(date +%s) - T0 ))
   cp "$OUT/gui.log" "$OUT/gui-$(printf '%s' "$variant" | tr -c 'a-z' '_' | cut -c1-60).log"
-  if [ $rc -eq 0 ]; then note "GUI self-test passed with '$variant' (${secs}s)"
+  if [ $rc -eq 0 ]; then GUI_OK="$variant ($(grep -o '"ok":true.*' "$OUT/gui.log" | cut -c1-160))"; note "GUI self-test passed with '$variant' (${secs}s)"
   elif [ $rc -eq 124 ]; then note "GUI self-test timed out with '$variant' after ${secs}s"
   else note "GUI self-test with '$variant': exit $rc after ${secs}s: $(grep -v '^\s*$' "$OUT/gui.log" | grep -v 'bus.cc' | tail -n 2 | tr '\n' ' ' | cut -c1-240)"; fi
 done
+
+# On an x86 host nothing is emulated, so the window must really open.
+if [ -n "$NATIVE" ] && [ ${#GUI_VARIANTS[@]} -gt 0 ]; then
+  if [ -n "$GUI_OK" ]; then ok "GUI self-test (native i386): $GUI_OK"; else bad "GUI self-test failed natively (see gui-*.log)"; fi
+fi
 
 echo
 echo "== Summary =="

@@ -181,7 +181,17 @@ function guardContents(wc: WebContents): void {
     });
   }
   wc.on('will-navigate', (e, url) => {
-    if (!sameOrigin(url) && !/^data:/i.test(url)) e.preventDefault();
+    if (/^data:/i.test(url)) return;
+    if (!sameOrigin(url)) {
+      e.preventDefault();
+      return;
+    }
+    // An article link that targets the whole window (target="_top") would replace the app: show it in the reader.
+    const p = url.slice(serverUrl.replace(/\/$/, '').length);
+    if (win && wc === win.webContents && p && p !== '/' && p.charAt(0) !== '#' && p.indexOf('/#') !== 0) {
+      e.preventDefault();
+      openHandler(url);
+    }
   });
 }
 

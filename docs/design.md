@@ -67,7 +67,13 @@ pages  USING fts5(text, tokenize='porter unicode61 remove_diacritics 2')   -- ro
 titles USING fts5(title, category, tokenize='porter unicode61 remove_diacritics 2') -- rowid = doc_id
 ```
 
-- Incremental: skip when `(size, mtime)` unchanged and status ≠ error. Each document is one transaction (delete rowid range, insert pages, upsert doc). Deleted files are purged only if the walk found at least one file.
+- Titles: a good PDF metadata title (junk like `ES-prelims.pmd`, `Subject:`, `Chapter 1` is rejected) → Hesperian
+  chapter PDFs (`en_<code>_<year>_<part>.pdf`): heading from page 1 + series label "Book (year) · Chapter N" →
+  code-like names in a subfolder: "Ship Captains Medical Guide — Chapter 8" → humanized file name.
+- Copied libraries: `docs.fp` = sha1(size + first/last 64 KB). Same size + new mtime + same fp = unchanged
+  (only the date is updated), so a Mac-built index survives `cp -r` / USB copies to the CF-30.
+- Notice codes are kebab-case (`no-index`, `index-busy`, `no-pdftotext`, `file-missing`, …).
+- Incremental: skip when `(size, mtime)` unchanged (or only mtime changed with the same fingerprint). Each document is one transaction (delete rowid range, insert pages, upsert doc). Deleted files are purged only if the walk found at least one file.
 - `scanned` = average < 25 non-space chars per page (listed in the UI as not searchable).
 - Text cleanup: join `word-\nword` hyphenation, collapse whitespace.
 - Locking: node-sqlite3-wasm uses a `library.sqlite.lock` directory (mkdir lock), so server and indexer can't corrupt each other but can't overlap. Server retries on `SQLITE_BUSY` (≤ 3 s). On server start, a stale lock is removed if no indexer pid (from `index/indexer.pid`) is alive.

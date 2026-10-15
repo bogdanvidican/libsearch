@@ -14,14 +14,16 @@ brew install poppler        # pdftotext + pdfinfo for the indexer
 Optional for the ZIM path: a macOS kiwix-tools build (`kiwix-serve` on PATH) and one small ZIM
 (e.g. Appropedia or PhET) in `<library root>/15 Offline Encyclopedias (Kiwix)/`.
 
-The books on the Mac live one level above the kit (`~/Documents/Community Rebuild Library/01 Medicine/...`);
-`npm start` passes `--library-root ..` and the server also auto-detects roots by walking up from the app.
+The books on the Mac live one level above the kit (`~/Documents/Community Rebuild Library/01 Medicine/...`).
+Library roots are auto-detected by walking up from the app folder (every ancestor holding an `NN Name` folder),
+so `npm start` needs no flags; pass `--library-root <dir>` to override.
 
 ## npm scripts
 
 | Script | What it does |
 | --- | --- |
 | `npm start` | build + run the Electron app (Electron 17, same major as the CF-30) |
+| `npm run self-test` | build + start the app, check the UI renders and `/api/status` answers, print JSON, exit |
 | `npm run serve` | build + run only the server and open it in the browser (Firefox-mode UI) |
 | `npm run index` | build + run the indexer in the terminal (`-- --full` to re-read every book) |
 | `npm run build` | esbuild bundles into `build/` (`node scripts/build.mjs --watch` for watch mode) |
@@ -44,8 +46,8 @@ The UI is compiled to ES2017 so the Firefox fallback runs on the CF-30's old Fir
 ## Running pieces by hand
 
 ```bash
-node build/server/server.js --mode browser --port 8090 --library-root .. --open-browser
-node build/indexer/indexer.js --library-root .. [--full] [--json]
+node build/server/server.js --mode browser --port 8090 --open-browser     # roots auto-detected
+node build/indexer/indexer.js [--library-root DIR] [--full] [--json]
 # On Linux with the packaged app, the same files run on Electron's own Node:
 ELECTRON_RUN_AS_NODE=1 dist/library-search-linux-ia32/library-search \
   dist/library-search-linux-ia32/resources/app/build/server/server.js --mode browser --port 8090 --library-root ..
