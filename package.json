@@ -9,15 +9,16 @@
   "main": "build/main/main.js",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "start": "node scripts/build.mjs && electron . --library-root ..",
-    "serve": "node scripts/build.mjs && node build/server/server.js --open-browser",
+    "start": "node scripts/build.mjs && electron .",
+    "serve": "node scripts/build.mjs && node build/server/server.js --mode browser --open-browser",
     "index": "node scripts/build.mjs && node build/indexer/indexer.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "check": "npm run typecheck && npm test",
     "dist:linux-ia32": "node scripts/package.mjs --arch ia32",
     "dist:mac": "node scripts/package.mjs --platform darwin --arch arm64",
-    "test:ia32": "bash scripts/docker-ia32-test.sh"
+    "test:ia32": "bash scripts/docker-ia32-test.sh",
+    "self-test": "node scripts/build.mjs && electron . --self-test"
   },
   "dependencies": {
     "node-sqlite3-wasm": "0.8.60"
@@ -35,6 +36,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "typescript": "5.9.3",
+    "vite": "8.3.4",
     "vitest": "5.0.4"
   }
 }

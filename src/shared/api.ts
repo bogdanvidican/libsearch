@@ -19,8 +19,12 @@ export interface PageHit {
 export interface BookResult {
   docId: number;
   title: string;
+  /** Display label under the title, e.g. "Where There Is No Doctor (2025) · Chapter 9" (may be empty). */
+  series?: string;
   category: string;
-  /** e.g. "Hesperian (chapters) / en_wtnd_2025"; empty when the file sits directly in the category folder. */
+  /** Category folder name, e.g. "01 Medicine" (the value for the category filter). */
+  folder?: string;
+  /** Series label when there is one, else the folder path below the category, e.g. "Humanure Handbook". */
   subfolder: string;
   kind: DocKind;
   /** Best page (1-based). For EPUBs this is the chapter number. 0 when it matched on the title only. */
@@ -163,6 +167,8 @@ export interface Category {
 export interface DocSummary {
   docId: number;
   title: string;
+  /** Display label, e.g. "Where There Is No Doctor (2025) · Chapter 9" (may be empty). */
+  series?: string;
   category: string;
   folder: string;
   subfolder: string;

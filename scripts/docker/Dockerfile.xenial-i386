@@ -1,0 +1,16 @@
+# Stand-in for the CF-30: Ubuntu 16.04 i386 (glibc 2.23). On Apple Silicon this runs under QEMU (slow).
+# Built and used by scripts/docker-ia32-test.sh
+FROM --platform=linux/386 i386/ubuntu:xenial
+ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
+# Electron 17 runtime libraries (all part of a default Ubuntu 16.04 desktop), Xvfb for a headless window,
+# poppler-utils for pdftotext/pdfinfo, binutils for objdump.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      libgtk-3-0 libnss3 libxss1 libasound2 libgbm1 libx11-xcb1 libxtst6 libatk-bridge2.0-0 \
+      libdrm2 libxkbcommon0 libxshmfence1 libnotify4 libxrandr2 libcups2 libatspi2.0-0 libuuid1 \
+      libsecret-1-0 libxcomposite1 libxdamage1 libxfixes3 libpango-1.0-0 libcairo2 libexpat1 \
+      xdg-utils xvfb xauth poppler-utils binutils curl ca-certificates procps file psmisc \
+      fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -m -s /bin/bash tester
+USER tester
+WORKDIR /home/tester

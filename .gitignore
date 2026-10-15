@@ -6,3 +6,4 @@ index/
 .DS_Store
 m0-report*.txt
 tests/.tmp/
+logs/
