@@ -1,0 +1,8 @@
+node_modules/
+build/
+dist/
+index/
+*.log
+.DS_Store
+m0-report*.txt
+tests/.tmp/
