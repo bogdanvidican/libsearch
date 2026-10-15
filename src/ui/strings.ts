@@ -250,6 +250,12 @@ export const S = {
     'no-zims': 'No encyclopedia files found',
     'port-busy': 'Port is in use by another program',
     error: 'Not working',
+    skippedTitle: (n: number) =>
+      n === 1 ? 'One encyclopedia file was left out:' : `${formatNumber(n)} encyclopedia files were left out:`,
+    skippedToast: (n: number) =>
+      n === 1 ? 'Encyclopedias started, but one file was left out.' : `Encyclopedias started, but ${formatNumber(n)} files were left out.`,
+    skippedToastDetail: 'The Library page says which ones and how to fix them.',
+    checkAgain: 'Check again',
     fix: {
       stopped: 'Click Start. It takes a few seconds.',
       'no-binary': 'Run 3-download-offline-wikipedia.sh once while connected to the internet; it downloads the Kiwix reader.',

@@ -97,8 +97,19 @@ export type KiwixState =
   | 'port-busy' // something else answers on the port
   | 'error';
 
+export interface SkippedZim {
+  /** File name, e.g. wikipedia_ro_all_maxi_2026-09.zim */
+  file: string;
+  path: string;
+  code: 'incomplete' | 'not-zim' | 'unreadable' | 'rejected';
+  reason: string;
+  fix: string;
+}
+
 export interface KiwixStatus {
   state: KiwixState;
+  /** ZIM files left out (still downloading, damaged...). The others still work. */
+  skipped?: SkippedZim[];
   port: number;
   /** Number of ZIM books the server reports (or files found on disk when stopped). */
   books: number;

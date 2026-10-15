@@ -145,7 +145,8 @@ function KiwixCard({ st }: { st: Status }) {
   const app = useApp();
   const k = st.kiwix;
   const tone = kiwixTone(k);
-  const canStart = k.state === 'stopped' || k.state === 'error' || k.state === 'port-busy';
+  const skipped = k.skipped || [];
+  const canStart = k.state === 'stopped' || k.state === 'error' || k.state === 'port-busy' || skipped.length > 0;
   return (
     <section className="card">
       <CardHead icon={<Globe size={22} />} title={S.library.kiwixTitle} tone={tone} />
@@ -162,11 +163,27 @@ function KiwixCard({ st }: { st: Status }) {
       ) : (
         <p className="card__text">{S.library.kiwixBody}</p>
       )}
+      {skipped.length ? (
+        <div className="skipped" role="note">
+          <p className="skipped__title">{S.kiwix.skippedTitle(skipped.length)}</p>
+          <ul className="skipped__list" role="list">
+            {skipped.map((z) => (
+              <li key={z.path} className="skipped__item">
+                <span className="skipped__file">{z.file}</span>
+                <span className="skipped__reason">{z.reason}</span>
+                <span className="skipped__fix">
+                  <strong>{S.library.fixLabel}</strong> {z.fix}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {canStart || k.state === 'starting' ? (
         <div className="btn-row">
           <button type="button" className="btn btn--primary" disabled={app.kiwixStarting || k.state === 'starting'} onClick={app.startKiwix}>
             {app.kiwixStarting || k.state === 'starting' ? <LoaderCircle className="spin" size={18} aria-hidden="true" /> : <Play size={18} aria-hidden="true" />}
-            {k.state === 'stopped' ? S.library.start : S.library.retry}
+            {k.state === 'stopped' ? S.library.start : skipped.length && k.state === 'running' ? S.kiwix.checkAgain : S.library.retry}
           </button>
         </div>
       ) : null}

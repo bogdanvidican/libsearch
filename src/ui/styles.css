@@ -845,6 +845,45 @@ a {
   margin-top: 4px;
 }
 
+/* Encyclopedia files left out (still downloading, damaged) */
+.skipped {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-sm);
+  background: var(--warn-soft);
+}
+.skipped__title {
+  font-weight: 700;
+  color: var(--text);
+}
+.skipped__list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.skipped__item {
+  display: flex;
+  flex-direction: column;
+}
+.skipped__file {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
+}
+.skipped__reason {
+  color: var(--warn-text);
+  font-weight: 600;
+}
+.skipped__fix {
+  color: var(--text-2);
+}
+
 /* Library folders */
 .folders {
   list-style: none;

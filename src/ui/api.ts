@@ -111,6 +111,8 @@ export const api = {
   kiwixSearch: (book: string, q: string, limit: number, signal?: AbortSignal) =>
     request<KiwixSearchResponse>('GET', '/api/kiwix/search' + qs({ book, q, limit }), undefined, signal),
   kiwixStart: () => request<KiwixStatus>('POST', '/api/kiwix/start', {}),
+  /** Start, or restart our kiwix-serve so finished downloads / new files are picked up. */
+  kiwixRestart: () => request<KiwixStatus>('POST', '/api/kiwix/restart', {}),
   browse: () => request<Category[]>('GET', '/api/browse'),
   browseDocs: (category: string) => request<DocSummary[]>('GET', '/api/browse/docs' + qs({ category })),
   problems: () => request<DocSummary[]>('GET', '/api/index/problems'),

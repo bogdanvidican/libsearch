@@ -3,7 +3,7 @@ import { ChildProcess, spawn } from 'child_process';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
-import { KiwixBook, KiwixSearchResponse, KiwixStatus } from '../shared/api';
+import { KiwixBook, KiwixSearchResponse, KiwixStatus, SkippedZim } from '../shared/api';
 import { Config, isKiwixDirName } from './config';
 import { CatalogEntry, parseCatalog, parseSearchHtml, parseSearchXml, toKiwixBook } from './kiwixParse';
 import { isExecutableFile, which } from './tools';
@@ -56,6 +56,64 @@ class Limiter {
 
 type SearchApi = 'books.id' | 'content-xml' | 'content-html';
 
+const ZIM_MAGIC = 72173914; // "ZIM\x04"
+
+export interface ZimCheck {
+  file: string;
+  ok: boolean;
+  code?: SkippedZim['code'];
+  reason?: string;
+}
+
+function size(n: number): string {
+  if (n >= 1e9) return (n / 1e9).toFixed(n < 1e10 ? 1 : 0) + ' GB';
+  return Math.max(1, Math.round(n / 1e6)) + ' MB';
+}
+
+/**
+ * Cheap sanity check of a ZIM file before kiwix-serve sees it (kiwix-serve refuses to start at all when any
+ * one file is bad). The header records where the checksum sits at the very end of the file, so a file that
+ * is still downloading - or whose download was cut off - is shorter than that.
+ */
+export function inspectZim(file: string): ZimCheck {
+  let fd: number | undefined;
+  try {
+    fd = fs.openSync(file, 'r');
+    const have = fs.fstatSync(fd).size;
+    const h = Buffer.alloc(80);
+    const n = fs.readSync(fd, h, 0, 80, 0);
+    if (n < 80) return { file, ok: false, code: 'incomplete', reason: 'The download has not finished (the file is almost empty).' };
+    if (h.readUInt32LE(0) !== ZIM_MAGIC) return { file, ok: false, code: 'not-zim', reason: 'This is not a ZIM file.' };
+    const checksumPos = h.readUInt32LE(72) + h.readUInt32LE(76) * 4294967296;
+    if (checksumPos > 0 && have < checksumPos + 16) {
+      return {
+        file,
+        ok: false,
+        code: 'incomplete',
+        reason: `Only partly downloaded: ${size(have)} of ${size(checksumPos + 16)} (${Math.floor((have / (checksumPos + 16)) * 100)}%).`,
+      };
+    }
+    return { file, ok: true };
+  } catch (e) {
+    return { file, ok: false, code: 'unreadable', reason: `Can't read the file: ${(e as Error).message}` };
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+  }
+}
+
+const SKIP_FIX: Record<SkippedZim['code'], string> = {
+  incomplete: 'Run 3-download-offline-wikipedia.sh (or 4-download-khan-academy.sh) again to finish the download, then press Check again.',
+  'not-zim': 'Delete this file, or download it again.',
+  unreadable: 'Check that the drive holding it is connected, then press Check again.',
+  rejected: 'The file may be damaged or too new for this kiwix-serve. Download it again, or delete it.',
+};
+
+class LaunchError extends Error {
+  constructor(message: string, readonly badZim?: string) {
+    super(message);
+  }
+}
+
 export class Kiwix {
   private child: ChildProcess | null = null;
   private startedByUs = false;
@@ -66,6 +124,8 @@ export class Kiwix {
   private catalog: { at: number; entries: CatalogEntry[] } | null = null;
   private searchApi: SearchApi | null = null;
   private limiter = new Limiter(3);
+  /** ZIM files left out of the last start, with the reason (shown on the Library page). */
+  private skipped: SkippedZim[] = [];
 
   constructor(private cfg: Config) {}
 
@@ -133,7 +193,7 @@ export class Kiwix {
   }
 
   async status(): Promise<KiwixStatus> {
-    const base = { port: this.port, startedByUs: this.startedByUs };
+    const base = { port: this.port, startedByUs: this.startedByUs, skipped: this.skipped.length ? this.skipped : undefined };
     if (this.starting) return { ...base, state: 'starting', books: this.findZims().length, message: 'Starting the encyclopedia server…' };
     const p = await this.probe();
     if (p === 'running') {
@@ -179,15 +239,46 @@ export class Kiwix {
       this.starting = null;
       return this.status();
     }
+    const skip = (file: string, code: SkippedZim['code'], reason: string) =>
+      this.skipped.push({ file: path.basename(file), path: file, code, reason, fix: SKIP_FIX[code] });
+    this.skipped = [];
+    let good: string[] = [];
+    for (const c of zims.map(inspectZim)) {
+      if (c.ok) good.push(c.file);
+      else skip(c.file, c.code || 'unreadable', c.reason || '');
+    }
+    // One file kiwix-serve can't open stops it completely: leave that file out and try again with the rest.
+    for (let attempt = 0; attempt < 8 && good.length; attempt++) {
+      try {
+        await this.launch(bin, good);
+        this.starting = null;
+        return this.status();
+      } catch (e) {
+        const bad = e instanceof LaunchError ? e.badZim : undefined;
+        if (!bad || good.indexOf(bad) < 0) throw e;
+        skip(bad, 'rejected', 'kiwix-serve could not open this file.');
+        good = good.filter((z) => z !== bad);
+      }
+    }
+    throw new Error(
+      this.skipped.length === 1
+        ? `The only encyclopedia file can't be used yet: ${this.skipped[0].file}`
+        : `None of the ${this.skipped.length} encyclopedia files can be used yet.`
+    );
+  }
+
+  /** Starts kiwix-serve with these files and waits until it answers; LaunchError names a rejected file. */
+  private async launch(bin: string, zims: string[]): Promise<void> {
     this.stderrTail = '';
     const child = spawn(bin, [`--port=${this.port}`].concat(zims), { stdio: ['ignore', 'ignore', 'pipe'] });
     this.child = child;
     this.startedByUs = true;
     this.catalog = null;
     child.stderr!.on('data', (d: Buffer) => {
-      this.stderrTail = (this.stderrTail + d.toString()).slice(-2000);
+      this.stderrTail = (this.stderrTail + d.toString()).slice(-4000);
     });
     let exited: number | null | undefined;
+    let spawnError = '';
     child.on('exit', (code) => {
       exited = code;
       if (this.child === child) {
@@ -197,22 +288,35 @@ export class Kiwix {
       }
     });
     child.on('error', (e) => {
-      this.lastError = `Could not start kiwix-serve: ${e.message}`;
+      spawnError = e.message;
+      if (exited === undefined) exited = -1;
     });
     // Loading many large ZIMs from a hard disk can take a while.
     const deadline = Date.now() + 120000;
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 700));
       if (exited !== undefined) {
+        if (spawnError) throw new LaunchError(`Could not start kiwix-serve: ${spawnError}`);
+        const m = this.stderrTail.match(/Unable to add the ZIM file '([^']+)'/);
         const tail = this.stderrTail.trim().split('\n').slice(-2).join(' ');
-        throw new Error(`kiwix-serve stopped (exit ${exited})${tail ? ': ' + tail : ''}`);
+        throw new LaunchError(`kiwix-serve stopped (exit ${exited})${tail ? ': ' + tail : ''}`, m ? m[1] : undefined);
       }
-      if ((await this.probe(true)) === 'running') {
-        this.starting = null;
-        return this.status();
-      }
+      if ((await this.probe(true)) === 'running') return;
     }
-    throw new Error('kiwix-serve did not answer within 2 minutes');
+    this.stop();
+    throw new LaunchError('kiwix-serve did not answer within 2 minutes');
+  }
+
+  /** Stops our kiwix-serve (if we started it) and starts again: picks up finished downloads and new files. */
+  async restart(): Promise<KiwixStatus> {
+    if (this.child && this.startedByUs) {
+      const child = this.child;
+      const gone = new Promise<void>((r) => child.once('exit', () => r()));
+      this.stop();
+      await Promise.race([gone, new Promise((r) => setTimeout(r, 5000))]);
+    }
+    this.probeCache = null;
+    return this.start();
   }
 
   isStartedByUs(): boolean {

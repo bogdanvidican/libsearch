@@ -555,6 +555,9 @@ export class App {
       case 'POST /api/kiwix/start':
         return this.send(res, 200, await this.kiwix.start());
 
+      case 'POST /api/kiwix/restart':
+        return this.send(res, 200, await this.kiwix.restart());
+
       case 'POST /api/open': {
         const body = (await this.readBody(req)) as OpenRequest;
         const id = Number(body.docId);

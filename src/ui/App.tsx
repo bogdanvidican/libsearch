@@ -115,10 +115,13 @@ export function App() {
   const startKiwix = useCallback(() => {
     setKiwixStarting(true);
     api
-      .kiwixStart()
+      .kiwixRestart()
       .then(
         (k) => {
           if (k.state !== 'running' && k.state !== 'starting' && k.message) toast({ kind: 'error', message: k.message });
+          else if (k.state === 'running' && k.skipped && k.skipped.length) {
+            toast({ kind: 'warning', message: S.kiwix.skippedToast(k.skipped.length), detail: S.kiwix.skippedToastDetail });
+          }
         },
         (e) => toast(errorToast(e)),
       )
