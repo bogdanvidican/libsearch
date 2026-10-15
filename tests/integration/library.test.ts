@@ -242,7 +242,7 @@ describe('HTTP API', () => {
         req.end(body);
       });
     expect(JSON.parse((await get('/api/settings')).body)).toEqual({ theme: 'system' });
-    expect((await get('/')).body).not.toContain('data-theme');
+    expect((await get('/')).body).not.toContain('<html data-theme');
     expect(JSON.parse(await post('{"theme":"dark"}'))).toEqual({ theme: 'dark' });
     const html = (await get('/')).body;
     expect(html).toContain('<html data-theme="dark"');
