@@ -74,23 +74,23 @@
   --mono: 'Ubuntu Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace;
 }
 
-/* Dark theme: deep navy surfaces instead of black. Contrast (WCAG AA) on --surface #10223f:
-   text 13.7:1, muted 7.2:1, accent/links 6.5:1; button text (--on-accent) on --accent 7.2:1. */
+/* Dark theme: deep navy surfaces instead of black. Contrast (WCAG AA) on --surface #0b1a33:
+   text 14.7:1, muted 7.9:1, accent/links 6.9:1; button text (--on-accent) on --accent 7.2:1. */
 :root[data-theme='dark'] {
-  --bg: #0a1930;
-  --surface: #10223f;
-  --surface-2: #0d1d37;
-  --surface-3: #172e52;
-  --border: #22406b;
-  --border-strong: #36598c;
+  --bg: #071226;
+  --surface: #0b1a33;
+  --surface-2: #09162d;
+  --surface-3: #11254a;
+  --border: #1b3560;
+  --border-strong: #2e4d7f;
   --text: #e6edf8;
   --text-2: #c2d0e6;
   --muted: #9db0cd;
   --accent: #6ea3ff;
   --accent-hover: #8ab5ff;
   --accent-press: #a6c6ff;
-  --accent-soft: #16315c;
-  --accent-soft-2: #1d3d70;
+  --accent-soft: #122a52;
+  --accent-soft-2: #183563;
   --focus: #8ab5ff;
   --ok: #4ade80;
   --ok-soft: #0f3326;
@@ -103,7 +103,7 @@
   --g-books: #f0a64b;
   --g-books-soft: #3a2710;
   --g-reference: #7aa7ff;
-  --g-reference-soft: #16315c;
+  --g-reference-soft: #122a52;
   --g-khan: #4ade80;
   --g-khan-soft: #0f3326;
   --g-qa: #b794ff;
@@ -112,25 +112,25 @@
   --mark-text: #0f172a;
   --on-accent: #08162b;
   --inverse: #e6edf8;
-  --on-inverse: #0a1930;
-  --inverse-soft: rgba(10, 25, 48, 0.14);
+  --on-inverse: #071226;
+  --inverse-soft: rgba(7, 18, 38, 0.14);
   --placeholder: #8295b3;
   --focus-glow: rgba(110, 163, 255, 0.28);
-  --setup-top: #13294b;
+  --setup-top: #0f2244;
   --ok-border: #1f6b45;
   --warn-border: #7a5a14;
   --warn-text: #fcd34d;
   --bad-border: #7f2a35;
-  --filters-bg: rgba(10, 25, 48, 0.96);
-  --hover-border: #4a6fa8;
+  --filters-bg: rgba(7, 18, 38, 0.96);
+  --hover-border: #3f629a;
   --g-books-text: #f6c27e;
-  --skeleton: #1d3558;
+  --skeleton: #172d4e;
   --frame-bg: #ffffff;
-  --track: #1d3d70;
-  --code-bg: #06122a;
+  --track: #183563;
+  --code-bg: #040c1e;
   --code-text: #e6edf8;
   --dot-warn: #fbbf24;
-  --toast-bg: #1d3a6b;
+  --toast-bg: #18325e;
   --toast-text: #f8fafc;
   --toast-shadow: rgba(0, 0, 0, 0.5);
   --shadow-1: 0 1px 2px rgba(2, 8, 23, 0.4), 0 1px 1px rgba(2, 8, 23, 0.3);
@@ -139,20 +139,20 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #0a1930;
-    --surface: #10223f;
-    --surface-2: #0d1d37;
-    --surface-3: #172e52;
-    --border: #22406b;
-    --border-strong: #36598c;
+    --bg: #071226;
+    --surface: #0b1a33;
+    --surface-2: #09162d;
+    --surface-3: #11254a;
+    --border: #1b3560;
+    --border-strong: #2e4d7f;
     --text: #e6edf8;
     --text-2: #c2d0e6;
     --muted: #9db0cd;
     --accent: #6ea3ff;
     --accent-hover: #8ab5ff;
     --accent-press: #a6c6ff;
-    --accent-soft: #16315c;
-    --accent-soft-2: #1d3d70;
+    --accent-soft: #122a52;
+    --accent-soft-2: #183563;
     --focus: #8ab5ff;
     --ok: #4ade80;
     --ok-soft: #0f3326;
@@ -165,7 +165,7 @@
     --g-books: #f0a64b;
     --g-books-soft: #3a2710;
     --g-reference: #7aa7ff;
-    --g-reference-soft: #16315c;
+    --g-reference-soft: #122a52;
     --g-khan: #4ade80;
     --g-khan-soft: #0f3326;
     --g-qa: #b794ff;
@@ -174,25 +174,25 @@
     --mark-text: #0f172a;
     --on-accent: #08162b;
     --inverse: #e6edf8;
-    --on-inverse: #0a1930;
-    --inverse-soft: rgba(10, 25, 48, 0.14);
+    --on-inverse: #071226;
+    --inverse-soft: rgba(7, 18, 38, 0.14);
     --placeholder: #8295b3;
     --focus-glow: rgba(110, 163, 255, 0.28);
-    --setup-top: #13294b;
+    --setup-top: #0f2244;
     --ok-border: #1f6b45;
     --warn-border: #7a5a14;
     --warn-text: #fcd34d;
     --bad-border: #7f2a35;
-    --filters-bg: rgba(10, 25, 48, 0.96);
-    --hover-border: #4a6fa8;
+    --filters-bg: rgba(7, 18, 38, 0.96);
+    --hover-border: #3f629a;
     --g-books-text: #f6c27e;
-    --skeleton: #1d3558;
+    --skeleton: #172d4e;
     --frame-bg: #ffffff;
-    --track: #1d3d70;
-    --code-bg: #06122a;
+    --track: #183563;
+    --code-bg: #040c1e;
     --code-text: #e6edf8;
     --dot-warn: #fbbf24;
-    --toast-bg: #1d3a6b;
+    --toast-bg: #18325e;
     --toast-text: #f8fafc;
     --toast-shadow: rgba(0, 0, 0, 0.5);
     --shadow-1: 0 1px 2px rgba(2, 8, 23, 0.4), 0 1px 1px rgba(2, 8, 23, 0.3);

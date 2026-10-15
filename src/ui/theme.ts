@@ -47,6 +47,6 @@ export function onThemeChange(cb: () => void): () => void {
 
 /** Styles injected into same-origin reader pages we control (EPUB chapters) when the app is dark. */
 export const READER_DARK_CSS =
-  'html{background:#0a1930 !important;color:#e6edf8 !important}body{background:transparent !important;color:inherit !important}' +
+  'html{background:#071226 !important;color:#e6edf8 !important}body{background:transparent !important;color:inherit !important}' +
   'a{color:#8ab5ff !important}h1,h2,h3,h4,h5,h6{color:#f1f5fb !important}' +
   'img{background:#fff;border-radius:4px}::selection{background:#fbbf24;color:#0f172a}';

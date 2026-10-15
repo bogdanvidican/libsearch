@@ -55,7 +55,7 @@ function isDark(): boolean {
 
 function page(title: string, body: string): string {
   const c = isDark()
-    ? { bg: '#0a1930', card: '#10223f', border: '#22406b', text: '#e6edf8', text2: '#c2d0e6', code: '#172e52', track: '#22406b', accent: '#6ea3ff' }
+    ? { bg: '#071226', card: '#0b1a33', border: '#1b3560', text: '#e6edf8', text2: '#c2d0e6', code: '#11254a', track: '#1b3560', accent: '#6ea3ff' }
     : { bg: '#f3f5f8', card: '#fff', border: '#d9dee5', text: '#0f172a', text2: '#334155', code: '#eef2f6', track: '#cbd5e1', accent: '#1d4ed8' };
   const html =
     '<!doctype html><html><head><meta charset="utf-8"><title>Library Search</title><style>' +
@@ -131,7 +131,7 @@ function createWindow(): void {
     minWidth: 760,
     minHeight: 540,
     show: false,
-    backgroundColor: isDark() ? '#0a1930' : '#f3f5f8',
+    backgroundColor: isDark() ? '#071226' : '#f3f5f8',
     title: 'Library Search',
     autoHideMenuBar: true,
     webPreferences: {
