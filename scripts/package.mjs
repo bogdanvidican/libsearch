@@ -150,9 +150,12 @@ if (platform === 'linux') {
   rmSync(tarPath, { force: true });
   // bsdtar on macOS: ustar format (GNU tar 1.28 on 16.04 reads it without pax/xattr warnings),
   // no AppleDouble ._ files, no extended attributes, root-owned entries.
-  const tarArgs = ['-czf', tarPath, '--format', 'ustar', '--uid', '0', '--gid', '0', '--uname', 'root', '--gname', 'root'];
+  // Owner flags differ: bsdtar (macOS) uses --uid/--uname, GNU tar (Linux CI) uses --owner/--group.
   const isBsdTar = /bsdtar/.test(spawnSync('tar', ['--version'], { encoding: 'utf8' }).stdout || '');
-  if (isBsdTar) tarArgs.push('--no-xattrs', '--no-mac-metadata', '--no-acls', '--no-fflags');
+  const tarArgs = isBsdTar
+    ? ['-czf', tarPath, '--format', 'ustar', '--uid', '0', '--gid', '0', '--uname', 'root', '--gname', 'root',
+       '--no-xattrs', '--no-mac-metadata', '--no-acls', '--no-fflags']
+    : ['-czf', tarPath, '--format=ustar', '--owner=0', '--group=0', '--numeric-owner'];
   run('tar', [...tarArgs, '-C', dist, folderName], { env: { ...process.env, COPYFILE_DISABLE: '1' } });
 
   const sha = createHash('sha256').update(readFileSync(tarPath)).digest('hex');
