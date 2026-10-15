@@ -175,7 +175,15 @@ describe('HTTP API', () => {
   const token = 'test-token';
 
   beforeAll(async () => {
-    const app = new App(cfgFor(path.join(tmp, 'data')), token);
+    // Serve the UI page from a self-contained app dir, so the test never depends on a previous `npm run build`.
+    const appDir = path.join(tmp, 'app');
+    fs.mkdirSync(path.join(appDir, 'build', 'ui'), { recursive: true });
+    fs.copyFileSync(path.join(APP_DIR, 'src', 'ui', 'index.html'), path.join(appDir, 'build', 'ui', 'index.html'));
+    const cfg = resolveConfig(
+      ['--library-root', lib, '--data-dir', path.join(tmp, 'data'), '--no-kiwix-autostart', '--kiwix-port', '1'],
+      appDir
+    );
+    const app = new App(cfg, token);
     server = http.createServer((req, res) => void app.handle(req, res));
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
     const addr = server.address() as { port: number };
