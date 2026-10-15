@@ -13,6 +13,7 @@ import type {
   Notice,
   OpenRequest,
   OpenResult,
+  Settings,
   Status,
 } from '../shared/api';
 import { S } from './strings';
@@ -29,6 +30,8 @@ function meta(name: string): string {
 }
 
 export const TOKEN = meta('ls-token');
+/** Theme saved on the server when the page was served ('system' | 'light' | 'dark'). */
+export const INITIAL_THEME = meta('ls-theme');
 export const native: NativeBridge | undefined = window.librarySearch;
 export const MODE: 'electron' | 'browser' =
   meta('ls-mode') === 'electron' || native ? 'electron' : 'browser';
@@ -114,6 +117,7 @@ export const api = {
   buildIndex: (full: boolean) => request<IndexStatus | BuildProgress>('POST', '/api/index/build', { full }),
   cancelIndex: () => request<IndexStatus | BuildProgress>('POST', '/api/index/cancel', {}),
   open: (req: OpenRequest) => request<OpenResult>('POST', '/api/open', req),
+  saveSettings: (patch: Partial<Settings>) => request<Settings>('POST', '/api/settings', patch),
 };
 
 /** URL that opens a reader path in an outside browser (Firefox). ZIM pages go straight to kiwix-serve. */

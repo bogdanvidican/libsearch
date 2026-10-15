@@ -226,6 +226,31 @@ describe('HTTP API', () => {
     expect(r.body).not.toContain('<script');
   });
 
+  it('saves the theme and stamps it on the served page', async () => {
+    const post = (body: string) =>
+      new Promise<string>((resolve, reject) => {
+        const req = http.request(
+          base + '/api/settings',
+          { method: 'POST', headers: { 'X-Token': token, 'Content-Type': 'application/json' } },
+          (res) => {
+            let b = '';
+            res.on('data', (d) => (b += d));
+            res.on('end', () => resolve(b));
+          }
+        );
+        req.on('error', reject);
+        req.end(body);
+      });
+    expect(JSON.parse((await get('/api/settings')).body)).toEqual({ theme: 'system' });
+    expect((await get('/')).body).not.toContain('data-theme');
+    expect(JSON.parse(await post('{"theme":"dark"}'))).toEqual({ theme: 'dark' });
+    const html = (await get('/')).body;
+    expect(html).toContain('<html data-theme="dark"');
+    expect(html).toContain('<meta name="ls-theme" content="dark">');
+    expect(JSON.parse(await post('{"theme":"purple"}'))).toEqual({ theme: 'dark' }); // invalid values are ignored
+    expect(JSON.parse(await post('{"theme":"system"}'))).toEqual({ theme: 'system' });
+  });
+
   it('answers unknown paths through the kiwix proxy with a friendly 503 when kiwix is down', async () => {
     const r = await get('/content/wikipedia/A/Water', {});
     expect(r.status).toBe(503);

@@ -204,3 +204,11 @@ export interface NativeBridge {
   openExternal(url: string): void;
   onFoundInPage(cb: (r: { matches: number; activeMatchOrdinal: number }) => void): () => void;
 }
+
+/** 'system' follows the operating system (prefers-color-scheme). */
+export type ThemeSetting = 'system' | 'light' | 'dark';
+
+/** Saved in <data dir>/settings.json, so it survives restarts (the app's port changes every launch). */
+export interface Settings {
+  theme: ThemeSetting;
+}

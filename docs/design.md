@@ -108,6 +108,12 @@ Guidelines: WCAG 2.2 AA (text contrast ≥ 4.5:1, visible focus ring, targets �
 
 Screens (hash routes): `#/` home (big search, example chips, category tiles) · `#/search?q=&f=` results (filter chips: All · Books · Wikipedia & reference · Khan Academy · Q&A; category select for books) · `#/read?u=` reader (toolbar: Back to results, ‹ ›, Find, Open in Firefox) · `#/browse[/<category>]` · `#/library` (index status + build button + progress, problems list, Kiwix status/start, About).
 
+Themes: light (default for sunlight) and a dark-blue theme (navy `#0a1930` / `#10223f`, never black), both WCAG AA.
+Setting `system | light | dark` lives in `<data dir>/settings.json` (`GET/POST /api/settings`) because the app's port,
+and so browser storage, changes every launch; the server stamps `data-theme` on `<html>` so the first paint is right.
+Header sun/moon button toggles; Library → Appearance offers "Same as computer". EPUB chapters follow the theme;
+Kiwix articles keep their own page styles.
+
 Keyboard: `/` focuses search, Enter searches, ↑/↓ move between results, Enter opens, Esc leaves the reader. Strings live in `src/ui/strings.ts` (Romanian later).
 
 ## Verification

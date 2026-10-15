@@ -3,11 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <!--ls-meta-->
   <title>Library Search</title>
   <link rel="stylesheet" href="app.css">
-  <style>html,body{margin:0;background:#f3f5f8;color:#0f172a}</style>
+  <style>
+    html,body{margin:0;background:#f3f5f8;color:#0f172a}
+    html[data-theme=dark],html[data-theme=dark] body{background:#0a1930;color:#e6edf8}
+    @media (prefers-color-scheme:dark){html:not([data-theme=light]),html:not([data-theme=light]) body{background:#0a1930;color:#e6edf8}}
+  </style>
 </head>
 <body>
   <div id="root"></div>

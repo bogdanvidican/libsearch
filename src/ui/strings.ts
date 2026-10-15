@@ -22,6 +22,16 @@ export const S = {
     main: 'Main',
   },
 
+  theme: {
+    toDark: 'Switch to dark mode',
+    toLight: 'Switch to light mode',
+    title: 'Appearance',
+    body: 'Light is easiest to read in bright sunlight. Dark blue is gentler on the eyes at night.',
+    system: 'Same as computer',
+    light: 'Light',
+    dark: 'Dark blue',
+  },
+
   search: {
     placeholder: 'Search books, Wikipedia, Khan Academy…',
     heroPlaceholder: 'What do you want to learn about?',

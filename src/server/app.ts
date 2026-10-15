@@ -10,6 +10,7 @@ import { DB, breakStaleLock, isBusyError, openDb, readIndexerPid, removeStaleLoc
 import { Kiwix } from './kiwix';
 import { openDocument, readEpubEntry } from './opener';
 import { FileStamp, IndexStats, indexStats, indexedFileStamps, listCategories, listDocs, listProblems, resolveDocFile, searchBooks } from './search';
+import { loadSettings, saveSettings } from './settings';
 import { hasCommand } from './tools';
 import { findLibraryFiles, fingerprint } from '../indexer/walk';
 
@@ -324,11 +325,16 @@ export class App {
     const ext = path.extname(file).toLowerCase();
     let body: Buffer = fs.readFileSync(file);
     if (ext === '.html') {
+      const theme = loadSettings(this.cfg.dataDir).theme;
       const meta =
         `<meta name="ls-token" content="${this.token}">` +
         `<meta name="ls-mode" content="${this.cfg.mode}">` +
-        `<meta name="ls-version" content="${__APP_VERSION__}">`;
-      body = Buffer.from(body.toString('utf8').replace('<!--ls-meta-->', meta), 'utf8');
+        `<meta name="ls-version" content="${__APP_VERSION__}">` +
+        `<meta name="ls-theme" content="${theme}">`;
+      let html = body.toString('utf8').replace('<!--ls-meta-->', meta);
+      // Stamp an explicit theme on <html> so the first paint already has the right colors.
+      if (theme !== 'system') html = html.replace(/<html\b/i, `<html data-theme="${theme}"`);
+      body = Buffer.from(html, 'utf8');
     }
     res.writeHead(200, {
       'Content-Type': UI_TYPES[ext] || 'application/octet-stream',
@@ -460,6 +466,12 @@ export class App {
           throw e;
         }
       }
+
+      case 'GET /api/settings':
+        return this.send(res, 200, loadSettings(this.cfg.dataDir));
+
+      case 'POST /api/settings':
+        return this.send(res, 200, saveSettings(this.cfg.dataDir, await this.readBody(req)));
 
       case 'GET /api/browse':
         return this.send(res, 200, await this.withDb((db) => listCategories(db), []));

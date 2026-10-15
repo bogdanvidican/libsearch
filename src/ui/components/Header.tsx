@@ -1,7 +1,9 @@
-import { BookOpen, House, LayoutGrid, Settings2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { BookOpen, House, LayoutGrid, Moon, Settings2, Sun } from 'lucide-react';
 import { navigate, Route } from '../router';
 import { S } from '../strings';
 import { SearchBox } from './SearchBox';
+import { effectiveTheme, onThemeChange, setTheme } from '../theme';
 
 interface Props {
   route: Route;
@@ -48,8 +50,27 @@ export function Header({ route, onSearch, libraryAlert, lastQuery }: Props) {
           alert={libraryAlert}
           onClick={() => navigate({ name: 'library' })}
         />
+        <ThemeToggle />
       </nav>
     </header>
+  );
+}
+
+/** One tap between light and dark blue; "Same as computer" lives on the Library page. */
+function ThemeToggle() {
+  const [dark, setDark] = useState(effectiveTheme() === 'dark');
+  useEffect(() => onThemeChange(() => setDark(effectiveTheme() === 'dark')), []);
+  const label = dark ? S.theme.toLight : S.theme.toDark;
+  return (
+    <button
+      type="button"
+      className="topnav__item topnav__item--icon"
+      aria-label={label}
+      title={label}
+      onClick={() => setTheme(dark ? 'light' : 'dark')}
+    >
+      {dark ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
+    </button>
   );
 }
 

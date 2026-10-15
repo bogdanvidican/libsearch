@@ -1,10 +1,11 @@
 // Electron main process: a thin shell around the local server (src/server).
 // Written defensively for old Electron (11-17) because the CF-30 may need a fallback build.
-import { app, BrowserWindow, ipcMain, Menu, screen, session, shell, WebContents } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, nativeTheme, screen, session, shell, WebContents } from 'electron';
 import { ChildProcess, fork } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { boolFlag, parseArgs, resolveConfig } from '../server/config';
+import { loadSettings } from '../server/settings';
 
 declare const __APP_VERSION__: string;
 
@@ -46,14 +47,23 @@ function sameOrigin(u: string): boolean {
   return !!serverUrl && u.indexOf(serverUrl.replace(/\/$/, '')) === 0;
 }
 
+/** Same rule as the UI: the saved theme, or the OS preference when it is "system". */
+function isDark(): boolean {
+  const t = loadSettings(cfg.dataDir).theme;
+  return t === 'dark' || (t === 'system' && nativeTheme.shouldUseDarkColors);
+}
+
 function page(title: string, body: string): string {
+  const c = isDark()
+    ? { bg: '#0a1930', card: '#10223f', border: '#22406b', text: '#e6edf8', text2: '#c2d0e6', code: '#172e52', track: '#22406b', accent: '#6ea3ff' }
+    : { bg: '#f3f5f8', card: '#fff', border: '#d9dee5', text: '#0f172a', text2: '#334155', code: '#eef2f6', track: '#cbd5e1', accent: '#1d4ed8' };
   const html =
     '<!doctype html><html><head><meta charset="utf-8"><title>Library Search</title><style>' +
-    'html,body{height:100%;margin:0}body{display:flex;align-items:center;justify-content:center;background:#f6f7f9;' +
-    'font:16px/1.5 system-ui,-apple-system,"Ubuntu","DejaVu Sans",sans-serif;color:#0f172a}' +
-    '.card{max-width:560px;padding:32px 36px;background:#fff;border:1px solid #d9dee5;border-radius:16px}' +
-    'h1{font-size:22px;margin:0 0 8px}p{margin:8px 0;color:#334155}code{background:#eef2f6;padding:2px 6px;border-radius:6px;word-break:break-all}' +
-    '.spin{width:28px;height:28px;border:3px solid #cbd5e1;border-top-color:#1d4ed8;border-radius:50%;animation:s 1s linear infinite;margin-bottom:16px}' +
+    `html,body{height:100%;margin:0}body{display:flex;align-items:center;justify-content:center;background:${c.bg};` +
+    `font:16px/1.5 system-ui,-apple-system,"Ubuntu","DejaVu Sans",sans-serif;color:${c.text}}` +
+    `.card{max-width:560px;padding:32px 36px;background:${c.card};border:1px solid ${c.border};border-radius:16px}` +
+    `h1{font-size:22px;margin:0 0 8px}p{margin:8px 0;color:${c.text2}}code{background:${c.code};padding:2px 6px;border-radius:6px;word-break:break-all}` +
+    `.spin{width:28px;height:28px;border:3px solid ${c.track};border-top-color:${c.accent};border-radius:50%;animation:s 1s linear infinite;margin-bottom:16px}` +
     '@keyframes s{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.spin{animation:none}}' +
     `</style></head><body><div class="card"><h1>${title}</h1>${body}</div></body></html>`;
   return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
@@ -121,7 +131,7 @@ function createWindow(): void {
     minWidth: 760,
     minHeight: 540,
     show: false,
-    backgroundColor: '#f6f7f9',
+    backgroundColor: isDark() ? '#0a1930' : '#f3f5f8',
     title: 'Library Search',
     autoHideMenuBar: true,
     webPreferences: {

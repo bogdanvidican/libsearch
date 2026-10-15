@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ExternalL
 import { externalUrl, MODE, native } from '../api';
 import { useApp } from '../context';
 import { S } from '../strings';
+import { effectiveTheme, onThemeChange, READER_DARK_CSS } from '../theme';
 
 interface Props {
   url: string;
@@ -12,6 +13,31 @@ interface Props {
 }
 
 export const READER_FRAME_ID = 'reader-frame';
+
+/**
+ * EPUB chapters are styled by us, so they follow the app's dark-blue theme. Encyclopedia articles keep their
+ * own page styles (forcing dark colors onto arbitrary pages makes tables and diagrams unreadable).
+ */
+function applyFrameTheme(f: HTMLIFrameElement | null): void {
+  try {
+    const d = f && f.contentWindow ? f.contentWindow.document : null;
+    if (!d || !d.head) return;
+    const isEpub = /^\/epub\//.test(f!.contentWindow!.location.pathname);
+    let st = d.getElementById('ls-reader-dark');
+    if (isEpub && effectiveTheme() === 'dark') {
+      if (!st) {
+        st = d.createElement('style');
+        st.id = 'ls-reader-dark';
+        st.textContent = READER_DARK_CSS;
+        d.head.appendChild(st);
+      }
+    } else if (st && st.parentNode) {
+      st.parentNode.removeChild(st);
+    }
+  } catch (e) {
+    /* not same-origin: nothing to style */
+  }
+}
 
 /**
  * In-app reader for ZIM articles and EPUB chapters. The page is same-origin (the server proxies
@@ -25,6 +51,8 @@ export function Reader({ url, title, findHint }: Props) {
   const [path, setPath] = useState(url);
   const [loading, setLoading] = useState(true);
   const [findOpen, setFindOpen] = useState(false);
+
+  useEffect(() => onThemeChange(() => applyFrameTheme(frame.current)), []);
 
   useEffect(() => {
     setDocTitle(title);
@@ -47,6 +75,7 @@ export function Reader({ url, title, findHint }: Props) {
           st.textContent = '::selection{background:#fbbf24;color:#0f172a}';
           w.document.head.appendChild(st);
         }
+        applyFrameTheme(f);
         setPath(w.location.pathname + w.location.search);
         // Let Esc inside the article leave the reader too.
         w.document.addEventListener('keydown', (e: KeyboardEvent) => {

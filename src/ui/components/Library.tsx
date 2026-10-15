@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { CircleCheck, CircleAlert, Database, Globe, Info, LoaderCircle, Play, RefreshCw, Square, Wrench } from 'lucide-react';
+import { useEffect } from 'react';
+import { CircleCheck, CircleAlert, Database, Globe, Info, LoaderCircle, Monitor, Moon, Palette, Play, RefreshCw, Square, Sun, Wrench } from 'lucide-react';
+import type { ThemeSetting } from '../../shared/api';
 import type { DocSummary, Status } from '../../shared/api';
 import { api, MODE } from '../api';
 import { useApp } from '../context';
@@ -7,6 +9,7 @@ import { etaText, formatDate, kiwixFix, kiwixLabel, kiwixTone, percent } from '.
 import { useLoad } from '../hooks';
 import { formatNumber, S } from '../strings';
 import { NoticeBox } from './NoticeBox';
+import { onThemeChange, setTheme, themeSetting } from '../theme';
 
 export function Library() {
   const app = useApp();
@@ -33,6 +36,7 @@ export function Library() {
         <div className="lib-col">
           <KiwixCard st={st} />
           <ToolsCard st={st} />
+          <AppearanceCard />
         </div>
       </div>
       <Problems st={st} />
@@ -194,6 +198,37 @@ function ToolsCard({ st }: { st: Status }) {
           );
         })}
       </ul>
+    </section>
+  );
+}
+
+function AppearanceCard() {
+  const [current, setCurrent] = useState<ThemeSetting>(themeSetting());
+  useEffect(() => onThemeChange(() => setCurrent(themeSetting())), []);
+  const options: Array<[ThemeSetting, string, JSX.Element]> = [
+    ['system', S.theme.system, <Monitor key="s" size={18} aria-hidden="true" />],
+    ['light', S.theme.light, <Sun key="l" size={18} aria-hidden="true" />],
+    ['dark', S.theme.dark, <Moon key="d" size={18} aria-hidden="true" />],
+  ];
+  return (
+    <section className="card">
+      <CardHead icon={<Palette size={22} />} title={S.theme.title} />
+      <p className="card__text">{S.theme.body}</p>
+      <div className="segmented" role="radiogroup" aria-label={S.theme.title}>
+        {options.map(([value, label, icon]) => (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={current === value}
+            className={'segmented__item' + (current === value ? ' is-selected' : '')}
+            onClick={() => setTheme(value)}
+          >
+            {icon}
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
     </section>
   );
 }
