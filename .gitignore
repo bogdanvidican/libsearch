@@ -7,3 +7,4 @@ index/
 m0-report*.txt
 tests/.tmp/
 logs/
+settings.json

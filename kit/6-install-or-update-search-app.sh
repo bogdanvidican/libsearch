@@ -6,7 +6,7 @@
 # Options:
 #   --kit <folder>       the "Ubuntu CF-30 Kit" folder (normally found automatically)
 # Settings (environment variables):
-#   LIBRARY_SEARCH_REPO=owner/name   GitHub repo (default: the "origin" of library-search-app/ if it's a git clone)
+#   LIBRARY_SEARCH_REPO=owner/name   GitHub repo (default: the "origin" of library-search-app/, else bogdanvidican/libsearch)
 #   GITHUB_TOKEN=...                 needed only if the repo is private
 #   LIBRARY_SEARCH_ELECTRON=13       pick the fallback build made with an older Electron (file name ends in -e13)
 
@@ -101,6 +101,7 @@ else
     url="$(git -C "$APPDIR" config --get remote.origin.url 2>/dev/null)"
     REPO="$(printf '%s\n' "$url" | sed -n 's#^.*github\.com[:/]\{1,\}\([^/]*/[^/]*\)$#\1#p' | sed 's#\.git$##')"
   fi
+  [ -n "$REPO" ] || REPO="bogdanvidican/libsearch"
   [ -n "$REPO" ] || die "Don't know which GitHub repo to download from. Either:
   - give the file:     bash 6-install-or-update-search-app.sh library-search-linux-ia32-vX.Y.Z.tar.gz
   - or name the repo:  LIBRARY_SEARCH_REPO=owner/library-search-app bash 6-install-or-update-search-app.sh"

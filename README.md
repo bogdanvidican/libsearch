@@ -88,7 +88,7 @@ Launchers for the kit root are kept in `kit/` and copied into the kit folder by 
 3. Create the GitHub release (the owner creates the GitHub repo; nothing here pushes by itself):
 
    ```bash
-   git tag v0.1.0 && git push origin main --tags
+   git tag v0.1.0 && git push origin master --tags
    gh release create v0.1.0 \
      dist/library-search-linux-ia32-v0.1.0.tar.gz \
      dist/library-search-linux-ia32-v0.1.0.tar.gz.sha256 \
@@ -101,7 +101,8 @@ Launchers for the kit root are kept in `kit/` and copied into the kit folder by 
 ## Installing on the CF-30
 
 - **With git + internet:** in the kit folder:
-  `git clone https://github.com/<owner>/<repo>.git library-search-app` then
+  `git clone https://github.com/bogdanvidican/libsearch.git library-search-app` (the folder must be named
+  `library-search-app`) then
   `bash library-search-app/kit/6-install-or-update-search-app.sh`
   (it finds the repo from `git remote`, downloads the newest release, unpacks it into
   `library-search-app/dist/library-search-linux-ia32/` and copies the `6-*` launchers into the kit folder).

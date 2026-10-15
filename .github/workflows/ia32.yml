@@ -5,7 +5,7 @@ name: ia32 (Ubuntu 16.04 i386)
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
   workflow_dispatch:
 
