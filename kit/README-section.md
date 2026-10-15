@@ -20,8 +20,14 @@ in the Document Viewer at the right page, articles open inside the app.
      `library-search-linux-ia32-vX.Y.Z.tar.gz` file (and `6-install-or-update-search-app.sh`) from a USB stick
      into this folder and run:  `bash 6-install-or-update-search-app.sh library-search-linux-ia32-vX.Y.Z.tar.gz`
    - Run the same command again later to update. Don't use sudo.
-2. Start it: double-click **6 · Search the library** (first time: right-click -> Properties -> Permissions ->
-   "Allow executing file as program"), or run  `bash 6-search-the-library.sh`.
+   - The installer adds **Library Search** to the app menu and asks whether to put its icon in the sidebar
+     (answer Y). Later: `bash 6-install-or-update-search-app.sh --launcher` re-creates it, `--remove-launcher` removes it.
+   - The app doesn't have to live in this folder: `--dir <folder>` installs it anywhere. If it can't find the
+     books next to itself, it asks for the library folder on first start (also under **Library -> Library folders**,
+     where a USB drive or a second folder can be added).
+2. Start it: click **Library Search** in the sidebar (or search for it in the Dash), double-click
+   **6 · Search the library** here (first time: right-click -> Properties -> Permissions -> "Allow executing file
+   as program"), or run  `bash 6-search-the-library.sh`.
    It starts the offline Wikipedia reader by itself if step 3 or 4 was done - no need to run step 5 first.
 3. The first time, the app offers to **build the book index**: it reads every PDF once (30-90 minutes on the
    CF-30; the computer stays usable). You can stop it any time and it continues later. After adding new books,
@@ -31,4 +37,4 @@ in the Document Viewer at the right page, articles open inside the app.
 - Old scanned books without a text layer can't be searched inside - the app lists them under **Library**;
   you can still find them by title.
 - If the app window won't open, use the simple version in Firefox (same search):
-  `bash 6-search-the-library.sh --firefox`. Problems are logged in `library-search-app/logs/launcher.log`.
+  `bash 6-search-the-library.sh --firefox`. Problems are logged in the app folder under `logs/launcher.log`.

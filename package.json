@@ -7,6 +7,7 @@
   "license": "MIT",
   "private": true,
   "main": "build/main/main.js",
+  "desktopName": "library-search.desktop",
   "scripts": {
     "build": "node scripts/build.mjs",
     "start": "node scripts/build.mjs && electron .",

@@ -115,6 +115,20 @@ Launchers for the kit root are kept in `kit/` and copied into the kit folder by 
 The install script keeps the previous version as `….old` until the new one is in place, refuses to run as root,
 and prints `old -> new` versions.
 
+**The app can live anywhere** (it doesn't have to be inside the library or the kit):
+- Install location: `--dir <folder>`, else the git checkout the script is in, else the folder used last time
+  (`~/.config/library-search/app-home`), else `<kit>/library-search-app` when run from a kit, else `~/library-search`.
+- Index, settings and logs live in that folder (or `~/.local/share/library-search` if it isn't writable).
+- Library folders: `--library-root` / `LIBRARY_ROOTS` > folders chosen in the app (Library → Library folders,
+  saved in `settings.json`) > auto-detection (ancestors of the app folder holding `NN Name` folders).
+  When nothing is found the app asks for the folder on first start.
+
+**Menu entry + sidebar icon (Ubuntu):** the installer writes `~/.local/share/applications/library-search.desktop`
+(Exec = the launcher inside the installed app, so it works wherever the app is), installs the icon into
+`~/.local/share/icons/hicolor/`, and asks to pin it to the Unity sidebar (`--pin` / `--no-pin`; GNOME dock too).
+`--launcher` only redoes this, `--remove-launcher` undoes it. Icons: `assets/icons/library-search.svg` →
+`npx electron scripts/make-icons.cjs` renders the PNGs.
+
 ## Launchers (kit root)
 
 | File | Purpose |

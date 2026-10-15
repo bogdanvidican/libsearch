@@ -4,8 +4,8 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
 import { URL } from 'url';
-import { BuildProgress, IndexStatus, Notice, OpenRequest, Status } from '../shared/api';
-import { Config } from './config';
+import { BuildProgress, IndexStatus, Notice, OpenRequest, Settings, Status } from '../shared/api';
+import { checkLibraryFolder, Config, effectiveRoots, expandHome } from './config';
 import { DB, breakStaleLock, isBusyError, openDb, readIndexerPid, removeStaleLock, withRetry } from './db';
 import { Kiwix } from './kiwix';
 import { openDocument, readEpubEntry } from './opener';
@@ -150,6 +150,36 @@ export class App {
     return cur === fp;
   }
 
+  // ---------- library folders ----------
+
+  /** Plain-language reason a folder can't be a library root, or null when it is fine. */
+  private folderProblem(p: string): Notice | null {
+    const err = (message: string, fix: string): Notice => ({ kind: 'error', code: 'bad-folder', message, fix });
+    if (!path.isAbsolute(p)) return err(`"${p}" is not a full path.`, 'Type the whole path, starting with / (for example /home/me/Library).');
+    const c = checkLibraryFolder(p);
+    if (!c.exists) return err(`The folder "${p}" doesn't exist.`, 'Check the spelling, or plug in the drive that holds it.');
+    if (!c.categories && !c.zims) {
+      return err(
+        `"${p}" has no topic folders (like "01 Medicine") and no encyclopedia files.`,
+        'Choose the folder that contains the numbered topic folders.'
+      );
+    }
+    return null;
+  }
+
+  /** Switches to new library folders without a restart. */
+  applyRoots(saved: string[]): void {
+    const next = effectiveRoots(this.cfg, saved);
+    const changed = next.roots.join('\n') !== this.cfg.roots.join('\n');
+    this.cfg.roots = next.roots;
+    this.cfg.rootsSource = next.source;
+    if (!changed) return;
+    this.pending = null;
+    // The encyclopedias may have changed too: restart kiwix-serve if we started it, or start it now.
+    if (this.kiwix.isStartedByUs()) this.kiwix.stop();
+    if (this.cfg.kiwixAutostart) setTimeout(() => void this.kiwix.start(), 1500);
+  }
+
   // ---------- index build ----------
 
   private indexerPath(): string {
@@ -240,12 +270,20 @@ export class App {
       firefox: hasCommand('firefox'),
     };
     const notices: Notice[] = [];
+    const rootInfo = this.cfg.roots.map((r) => checkLibraryFolder(r));
     if (!this.cfg.roots.length) {
       notices.push({
         kind: 'error',
         code: 'no-library',
-        message: 'No library folder was found.',
-        fix: 'Start the app with 6-search-the-library.sh from the kit folder.',
+        message: 'No library folder has been chosen yet.',
+        fix: 'Open Library and choose the folder that holds your books (the one with folders like "01 Medicine").',
+      });
+    } else if (rootInfo.every((r) => !r.exists)) {
+      notices.push({
+        kind: 'error',
+        code: 'library-missing',
+        message: `The library folder can't be found: ${this.cfg.roots.join(', ')}`,
+        fix: 'If the books are on a USB drive, plug it in. Otherwise open Library and choose the folder again.',
       });
     } else if (!index.exists && !build.running) {
       notices.push({
@@ -279,6 +317,8 @@ export class App {
       electronVersion: process.versions.electron,
       nodeVersion: process.versions.node,
       roots: this.cfg.roots,
+      rootsSource: this.cfg.rootsSource,
+      rootInfo,
       dataDir: this.cfg.dataDir,
       index,
       kiwix: await this.kiwix.status(),
@@ -470,8 +510,20 @@ export class App {
       case 'GET /api/settings':
         return this.send(res, 200, loadSettings(this.cfg.dataDir));
 
-      case 'POST /api/settings':
-        return this.send(res, 200, saveSettings(this.cfg.dataDir, await this.readBody(req)));
+      case 'POST /api/settings': {
+        const body = (await this.readBody(req)) as Partial<Settings>;
+        if (body.libraryRoots !== undefined) {
+          if (!Array.isArray(body.libraryRoots)) throw new HttpError(400, 'libraryRoots must be a list');
+          body.libraryRoots = body.libraryRoots.map((r) => expandHome(String(r)));
+          for (const r of body.libraryRoots) {
+            const bad = this.folderProblem(r);
+            if (bad) throw new HttpError(400, bad.message, bad);
+          }
+        }
+        const saved = saveSettings(this.cfg.dataDir, body);
+        if (body.libraryRoots !== undefined) this.applyRoots(saved.libraryRoots);
+        return this.send(res, 200, saved);
+      }
 
       case 'GET /api/browse':
         return this.send(res, 200, await this.withDb((db) => listCategories(db), []));

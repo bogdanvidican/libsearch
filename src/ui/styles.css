@@ -600,6 +600,8 @@ a {
   font-weight: 600;
   color: var(--accent);
   text-decoration: none;
+  border: 0;
+  background: none;
   border-radius: var(--radius-sm);
 }
 .link-btn:hover {
@@ -841,6 +843,95 @@ a {
 .card__text {
   color: var(--text-2);
   margin-top: 4px;
+}
+
+/* Library folders */
+.folders {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.folder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 8px 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.folder--missing {
+  border-color: var(--warn-border);
+  background: var(--warn-soft);
+}
+.folder__icon {
+  flex: none;
+  color: var(--accent);
+  display: flex;
+}
+.folder--missing .folder__icon {
+  color: var(--warn-text);
+}
+.folder__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.folder__path {
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
+}
+.folder__meta {
+  font-size: 14px;
+  color: var(--muted);
+}
+.folder--missing .folder__meta {
+  color: var(--warn-text);
+}
+.folders__actions {
+  margin-top: 14px;
+}
+.folders__form {
+  margin-top: 14px;
+}
+.folders__label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-2);
+  font-size: 15px;
+}
+.folders__row {
+  display: flex;
+  gap: 8px;
+}
+.folders__row .input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.folders__auto {
+  margin-top: 10px;
+}
+.input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.input::placeholder {
+  color: var(--placeholder);
+}
+.input:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
 }
 
 /* Option list (Appearance: Same as computer / Light / Dark blue), one full-width row per choice */

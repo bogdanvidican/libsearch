@@ -18,6 +18,7 @@ import {
   breakStaleLock,
   schemaVersion,
   setMeta,
+  getMeta,
   sleep,
   isBusyError,
 } from '../server/db';
@@ -188,6 +189,12 @@ export async function buildIndex(cfg: Config, opts: BuildOptions = {}): Promise<
     }
     await tx(db, () => ensureSchema(db), isCancelled, cfg.indexPath);
     await tx(db, () => setMeta(db, 'last_build_started', String(progress.startedAt)), isCancelled, cfg.indexPath);
+    // A different library than last time: books not found in it are removed even if their topic folder is
+    // missing (otherwise the old library's books would linger as broken results).
+    const rootsKey = JSON.stringify(cfg.roots.slice().sort());
+    const prevRoots = getMeta(db, 'roots');
+    const switchedLibrary = prevRoots !== undefined && prevRoots !== rootsKey;
+    if (switchedLibrary) log(`library folders changed: ${prevRoots} -> ${rootsKey}`);
 
     const existing = new Map<string, ExistingDoc>();
     for (const r of db.all('SELECT id, relpath, size, mtime, status, folder, fp FROM docs') as unknown as ExistingDoc[]) {
@@ -334,7 +341,10 @@ export async function buildIndex(cfg: Config, opts: BuildOptions = {}): Promise<
     emit();
     const seen = new Set(files.map((f) => f.relpath));
     const gone = (db.all('SELECT id, relpath, folder FROM docs') as unknown as ExistingDoc[]).filter(
-      (d) => !seen.has(d.relpath) && folderExistsInAnyRoot(cfg.roots, d.folder) && !existsInAnyRoot(cfg.roots, d.relpath)
+      (d) =>
+        !seen.has(d.relpath) &&
+        (switchedLibrary ? files.length > 0 : folderExistsInAnyRoot(cfg.roots, d.folder)) &&
+        !existsInAnyRoot(cfg.roots, d.relpath)
     );
     for (const d of gone) {
       await tx(
@@ -351,7 +361,15 @@ export async function buildIndex(cfg: Config, opts: BuildOptions = {}): Promise<
     }
 
     progress.finishedAt = Date.now();
-    await tx(db, () => setMeta(db, 'last_build_finished', String(progress.finishedAt)), isCancelled, cfg.indexPath);
+    await tx(
+      db,
+      () => {
+        setMeta(db, 'last_build_finished', String(progress.finishedAt));
+        setMeta(db, 'roots', rootsKey);
+      },
+      isCancelled,
+      cfg.indexPath
+    );
     if (progress.added + progress.updated + progress.removed > 50) {
       log('optimizing full-text index');
       await tx(db, () => db.run("INSERT INTO pages(pages) VALUES ('optimize')"), isCancelled, cfg.indexPath);

@@ -215,6 +215,10 @@ export class Kiwix {
     throw new Error('kiwix-serve did not answer within 2 minutes');
   }
 
+  isStartedByUs(): boolean {
+    return this.startedByUs && !!this.child;
+  }
+
   stop(): void {
     if (this.child && this.startedByUs) {
       try {

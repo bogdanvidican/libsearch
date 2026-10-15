@@ -5,6 +5,7 @@ import { navigate } from '../router';
 import { S } from '../strings';
 import { categoryIcon } from './icons';
 import { SearchBox } from './SearchBox';
+import { LibraryFolders } from './LibraryFolders';
 
 export function Home({ onSearch }: { onSearch: (q: string) => void }) {
   const app = useApp();
@@ -12,6 +13,8 @@ export function Home({ onSearch }: { onSearch: (q: string) => void }) {
   const docs = st ? st.index.docs : 0;
   const building = !!st && st.index.build.running;
   const noIndex = !!st && (!st.index.exists || st.index.docs === 0);
+  // The app can be installed anywhere: when it can't find a library next to itself, ask for the folder first.
+  const noLibrary = !!st && st.roots.length === 0;
 
   return (
     <div className="home">
@@ -31,7 +34,9 @@ export function Home({ onSearch }: { onSearch: (q: string) => void }) {
         </div>
       </section>
 
-      {building && st ? (
+      {noLibrary && st ? (
+        <LibraryFolders st={st} variant="setup" />
+      ) : building && st ? (
         <section className="card setup setup--building" aria-live="polite">
           <div className="setup__icon" aria-hidden="true">
             <Database size={24} />

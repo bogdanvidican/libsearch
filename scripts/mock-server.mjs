@@ -142,6 +142,8 @@ function status() {
     nodeVersion: 'v16.13.0',
     electronVersion: '17.4.11',
     roots: ['/home/user/Ubuntu CF-30 Kit'],
+    rootsSource: 'auto',
+    rootInfo: [{ path: '/home/user/Ubuntu CF-30 Kit', exists: true, categories: 16, zims: 9 }],
     dataDir: '/home/user/Ubuntu CF-30 Kit/library-search-app',
     index: {
       exists: state.index !== 'none' || building,

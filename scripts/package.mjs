@@ -65,6 +65,8 @@ const stagedPkg = {
   author: pkg.author,
   license: pkg.license,
   main: pkg.main,
+  // Linux: tells Electron which .desktop file it belongs to (Unity launcher integration).
+  desktopName: pkg.desktopName,
   dependencies: pkg.dependencies,
 };
 writeFileSync(join(stage, 'package.json'), JSON.stringify(stagedPkg, null, 2) + '\n');
@@ -81,6 +83,7 @@ for (const dep of Object.keys(pkg.dependencies || {})) {
 if (existsSync(join(root, 'kit'))) {
   cpSync(join(root, 'kit'), join(stage, 'kit'), { recursive: true, filter: (src) => !src.endsWith('.DS_Store') });
 }
+cpSync(join(root, 'assets'), join(stage, 'assets'), { recursive: true, filter: (src) => !src.endsWith('.DS_Store') });
 mkdirSync(join(stage, 'scripts'), { recursive: true });
 copyFileSync(join(root, 'scripts/m0-check.sh'), join(stage, 'scripts/m0-check.sh'));
 

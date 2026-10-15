@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('librarySearch', {
   stopFindInPage() {
     ipcRenderer.send('ls:find-stop');
   },
+  pickFolder(): Promise<string | null> {
+    return ipcRenderer.invoke('ls:pick-folder');
+  },
   openExternal(url: string) {
     ipcRenderer.send('ls:open-external', String(url));
   },

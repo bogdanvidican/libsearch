@@ -9,6 +9,7 @@ import { etaText, formatDate, kiwixFix, kiwixLabel, kiwixTone, percent } from '.
 import { useLoad } from '../hooks';
 import { formatNumber, S } from '../strings';
 import { NoticeBox } from './NoticeBox';
+import { LibraryFolders } from './LibraryFolders';
 import { onThemeChange, setTheme, themeSetting } from '../theme';
 
 export function Library() {
@@ -31,6 +32,7 @@ export function Library() {
       {st.notices.map((n) => (
         <NoticeBox key={n.code} kind={n.kind} title={n.message} fix={n.fix} />
       ))}
+      <LibraryFolders st={st} variant="card" />
       <div className="lib-grid">
         <IndexCard st={st} />
         <div className="lib-col">

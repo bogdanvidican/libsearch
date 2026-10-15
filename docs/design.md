@@ -39,8 +39,16 @@ Build output: `build/{main,server,indexer,ui}` via esbuild. Server/indexer targe
 
 ## Library roots and paths
 
-- Roots: `--library-root <dir>` (repeatable) → `LIBRARY_ROOTS` env (`:`-separated) → auto-detect: walk up from the app dir (≤ 5 levels); every ancestor containing a `NN Name` folder is a root (Mac: `Community Rebuild Library/`; CF-30: the kit).
-- Data dir (index, logs, settings): `--data-dir` → nearest ancestor named `library-search-app` → `~/.local/share/library-search`.
+The app may be installed anywhere; it does not have to sit inside the library.
+- App home = the folder holding `dist/` (packaged: `<home>/dist/library-search-<os>-<arch>/resources/app`), or the repo in dev.
+- Roots: `--library-root <dir>` (repeatable) → `LIBRARY_ROOTS` env → folders chosen in the app (`settings.json`
+  `libraryRoots`, set on Library → Library folders; native folder picker in Electron, typed path in Firefox mode;
+  validated: must hold `NN Name` topic folders or a Kiwix folder with ZIMs) → auto-detect: ancestors of the app home
+  (≤ 5 levels) holding a `NN Name` folder. Changing folders in the app applies live (kiwix-serve restarts) and the
+  next index update drops books of a previous library (`meta.roots` differs → strict purge).
+- Data dir (index, logs, settings): `--data-dir` → app home if writable → `~/.local/share/library-search`.
+- Launchers don't pass roots; they find the app via (1) their own location inside the package, (2) a git checkout,
+  (3) `~/.config/library-search/app-home` written by the installer, (4) `<kit>/library-search-app`.
 - Index stores `relpath` relative to its root, so an index built on the Mac works on the CF-30.
 - Category = first path segment with the leading number stripped (`01 Medicine` → `Medicine`). Subfolder (e.g. `Hesperian (chapters)/en_wtnd_2025`) is shown as a series label.
 - Kiwix folder: a root-level directory whose name contains `Kiwix` (`15 Offline Encyclopedias (Kiwix)`), `*.zim` inside; binary `kiwix-tools/kiwix-serve` there, else `--kiwix-serve`, else `kiwix-serve` on PATH. Numbered folders containing "Kiwix" are not book categories.

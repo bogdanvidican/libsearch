@@ -1,6 +1,6 @@
 // Electron main process: a thin shell around the local server (src/server).
 // Written defensively for old Electron (11-17) because the CF-30 may need a fallback build.
-import { app, BrowserWindow, ipcMain, Menu, nativeTheme, screen, session, shell, WebContents } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, screen, session, shell, WebContents } from 'electron';
 import { ChildProcess, fork } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -87,8 +87,9 @@ function showError(message: string): void {
 
 function startServer(): void {
   const serverArgs: string[] = ['--mode', 'electron'];
+  // Only explicit flags are passed on: the server finds the library itself (folders chosen in the app,
+  // or auto-detection), so changing the folder in the app works without a restart.
   for (const k of PASS_THROUGH) for (const v of args[k] || []) serverArgs.push(`--${k}`, v);
-  if (!(args['library-root'] || []).length) for (const r of cfg.roots) serverArgs.push('--library-root', r);
   const entry = path.join(APP_DIR, 'build', 'server', 'server.js');
   log(`starting server: ${entry} ${serverArgs.join(' ')}`);
   const child = fork(entry, serverArgs, {
@@ -133,6 +134,8 @@ function createWindow(): void {
     show: false,
     backgroundColor: isDark() ? '#071226' : '#f3f5f8',
     title: 'Library Search',
+    // Window/taskbar icon on Linux (the sidebar icon itself comes from the installed .desktop file).
+    icon: fs.existsSync(path.join(APP_DIR, 'assets', 'icons', '256.png')) ? path.join(APP_DIR, 'assets', 'icons', '256.png') : undefined,
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -269,6 +272,16 @@ if (!SELF_TEST && !app.requestSingleInstanceLock()) {
   });
   ipcMain.on('ls:find-stop', () => {
     if (win) win.webContents.stopFindInPage('keepSelection');
+  });
+  ipcMain.handle('ls:pick-folder', async () => {
+    const opts = {
+      title: 'Choose the library folder',
+      buttonLabel: 'Use this folder',
+      defaultPath: cfg.roots[0] || app.getPath('home'),
+      properties: ['openDirectory' as const],
+    };
+    const r = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);
+    return r.canceled || !r.filePaths.length ? null : r.filePaths[0];
   });
   ipcMain.on('ls:open-external', (_e, url: string) => {
     if (typeof url === 'string' && isLocalUrl(url) && /^https?:/i.test(url)) void shell.openExternal(url);

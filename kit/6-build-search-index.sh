@@ -7,14 +7,25 @@
 
 SELF="$(readlink -f "$0" 2>/dev/null || echo "$0")"
 SELF_DIR="$(cd "$(dirname "$SELF")" && pwd)"
-APPDIR=""
-d="$SELF_DIR"
-while [ -n "$d" ] && [ "$d" != "/" ]; do
-  if [ "$(basename "$d")" = "library-search-app" ]; then APPDIR="$d"; break; fi
-  d="$(dirname "$d")"
-done
-if [ -n "$APPDIR" ]; then KIT="$(dirname "$APPDIR")"; else KIT="$SELF_DIR"; APPDIR="$KIT/library-search-app"; fi
-cd "$KIT" || exit 1
+# --- where is the app? It can be installed anywhere - not only inside the library / kit folder -----------
+#  1. this script ships inside the installed app:  <home>/dist/library-search-<os>-<arch>/resources/app/kit/
+#  2. a git checkout of the repo:                   <home>/kit/
+#  3. the folder remembered by 6-install-or-update-search-app.sh (~/.config/library-search/app-home)
+#  4. the kit layout:                               <kit>/library-search-app
+find_app_home() {
+  case "$SELF_DIR" in
+    */dist/library-search-*/resources/app/kit|*/dist/library-search-*/Resources/app/kit)
+      printf '%s\n' "${SELF_DIR%%/dist/library-search-*}"; return 0;;
+  esac
+  if [ -f "$SELF_DIR/../package.json" ] && grep -q '"name": "library-search"' "$SELF_DIR/../package.json" 2>/dev/null; then
+    (cd "$SELF_DIR/.." && pwd); return 0
+  fi
+  local saved="${XDG_CONFIG_HOME:-$HOME/.config}/library-search/app-home"
+  if [ -f "$saved" ] && [ -d "$(cat "$saved")" ]; then cat "$saved"; return 0; fi
+  if [ -d "$SELF_DIR/library-search-app" ]; then printf '%s\n' "$SELF_DIR/library-search-app"; return 0; fi
+  return 1
+}
+APPDIR="$(find_app_home)"
 
 pause() { [ -t 0 ] && read -n 1 -s -r -p "Press any key to close."; echo; }
 
@@ -46,20 +57,14 @@ if ! command -v pdftotext >/dev/null 2>&1; then
   pause; exit 1
 fi
 
-ROOT_ARGS=(--library-root "$KIT")
-ROOTS_TXT="$KIT"
-PARENT="$(dirname "$KIT")"
-if ls -d "$PARENT"/[0-9][0-9]\ */ >/dev/null 2>&1; then ROOT_ARGS+=(--library-root "$PARENT"); ROOTS_TXT="$ROOTS_TXT and $PARENT"; fi
-
-echo "Building the search index for the books in: $ROOTS_TXT"
-echo "Index file: $APPDIR/index/library.sqlite"
+echo "Building the search index for the library folders chosen in the app (or found next to it)."
+echo "Change them on the app's Library page."
 echo "Press Ctrl+C to stop; run this again later to continue."
 echo
 
 # Ctrl+C goes to the indexer too; it finishes the current book and exits. Keep this script alive to say so.
 trap 'echo' INT
-nice -n 10 env ELECTRON_RUN_AS_NODE=1 "${NODE_CMD[@]}" "$APPRES/build/indexer/indexer.js" \
-  "${ROOT_ARGS[@]}" --data-dir "$APPDIR" "$@"
+nice -n 10 env ELECTRON_RUN_AS_NODE=1 "${NODE_CMD[@]}" "$APPRES/build/indexer/indexer.js" "$@"
 rc=$?
 trap - INT
 echo

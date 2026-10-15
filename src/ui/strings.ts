@@ -22,6 +22,43 @@ export const S = {
     main: 'Main',
   },
 
+  folders: {
+    title: 'Library folders',
+    body: 'Books and encyclopedia files are read from these folders.',
+    none: 'No library folder has been chosen yet.',
+    source: {
+      flag: 'They were set when the app was started (--library-root).',
+      env: 'They were set when the app was started (LIBRARY_ROOTS).',
+      settings: '',
+      auto: 'They were found automatically next to the app.',
+    } as Record<'flag' | 'env' | 'settings' | 'auto', string>,
+    contents: (topics: number, zims: number) =>
+      [
+        topics ? `${formatNumber(topics)} ${plural(topics, 'topic folder', 'topic folders')}` : '',
+        zims ? `${formatNumber(zims)} ${plural(zims, 'encyclopedia file', 'encyclopedia files')}` : '',
+      ]
+        .filter(Boolean)
+        .join(' · ') || 'Nothing to read in this folder yet',
+    missing: 'Not found. If it is on a USB drive, plug it in.',
+    remove: (p: string) => `Stop using ${p}`,
+    choose: 'Choose the library folder…',
+    addAnother: 'Add another folder…',
+    orType: 'Or type the full path:',
+    typeLabel: 'Type the full path of the library folder:',
+    placeholder: '/home/you/Community Rebuild Library',
+    add: 'Add',
+    useAuto: 'Forget these and find the library automatically',
+    added: (p: string) => `Library folder added: ${p}`,
+    saved: 'Library folders saved.',
+    updateHint: 'Open Library and click Update index so new books can be searched.',
+    saveFailed: 'The folder could not be saved.',
+    locked: 'To change them, start the app without --library-root.',
+    setupTitle: 'Where is your library?',
+    setupBody:
+      'Choose the folder that holds the books - the one with topic folders like "01 Medicine" ' +
+      '(and "15 Offline Encyclopedias (Kiwix)" if you have it). It can be anywhere, also on a USB drive.',
+  },
+
   theme: {
     toDark: 'Switch to dark mode',
     toLight: 'Switch to light mode',

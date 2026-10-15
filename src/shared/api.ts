@@ -148,6 +148,9 @@ export interface Status {
   electronVersion?: string;
   nodeVersion: string;
   roots: string[];
+  /** Where the library folders came from: start-up flag, environment, chosen in the app, or found automatically. */
+  rootsSource: RootsSource;
+  rootInfo: RootInfo[];
   dataDir: string;
   index: IndexStatus;
   kiwix: KiwixStatus;
@@ -203,6 +206,8 @@ export interface NativeBridge {
   stopFindInPage(): void;
   openExternal(url: string): void;
   onFoundInPage(cb: (r: { matches: number; activeMatchOrdinal: number }) => void): () => void;
+  /** Native "choose folder" dialog; resolves to null when cancelled. */
+  pickFolder?(): Promise<string | null>;
 }
 
 /** 'system' follows the operating system (prefers-color-scheme). */
@@ -211,4 +216,17 @@ export type ThemeSetting = 'system' | 'light' | 'dark';
 /** Saved in <data dir>/settings.json, so it survives restarts (the app's port changes every launch). */
 export interface Settings {
   theme: ThemeSetting;
+  /** Library folders chosen in the app (empty = find them automatically next to the app). */
+  libraryRoots: string[];
+}
+
+export type RootsSource = 'flag' | 'env' | 'settings' | 'auto';
+
+export interface RootInfo {
+  path: string;
+  exists: boolean;
+  /** Topic folders like "01 Medicine". */
+  categories: number;
+  /** Encyclopedia (.zim) files. */
+  zims: number;
 }

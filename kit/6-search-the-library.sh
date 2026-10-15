@@ -7,20 +7,30 @@
 SELF="$(readlink -f "$0" 2>/dev/null || echo "$0")"
 SELF_DIR="$(cd "$(dirname "$SELF")" && pwd)"
 
-# --- find the kit folder and the app folder ---------------------------------------------------------
-# Normal case: this file sits in the kit folder, the app in <kit>/library-search-app.
-# Developer case: run from the repo checkout (<kit>/library-search-app/kit/).
-APPDIR=""
-d="$SELF_DIR"
-while [ -n "$d" ] && [ "$d" != "/" ]; do
-  if [ "$(basename "$d")" = "library-search-app" ]; then APPDIR="$d"; break; fi
-  d="$(dirname "$d")"
-done
-if [ -n "$APPDIR" ]; then KIT="$(dirname "$APPDIR")"; else KIT="$SELF_DIR"; APPDIR="$KIT/library-search-app"; fi
-cd "$KIT" || exit 1
-
+# --- where is the app? It can be installed anywhere - not only inside the library / kit folder -----------
+#  1. this script ships inside the installed app:  <home>/dist/library-search-<os>-<arch>/resources/app/kit/
+#  2. a git checkout of the repo:                   <home>/kit/
+#  3. the folder remembered by 6-install-or-update-search-app.sh (~/.config/library-search/app-home)
+#  4. the kit layout:                               <kit>/library-search-app
+find_app_home() {
+  case "$SELF_DIR" in
+    */dist/library-search-*/resources/app/kit|*/dist/library-search-*/Resources/app/kit)
+      printf '%s\n' "${SELF_DIR%%/dist/library-search-*}"; return 0;;
+  esac
+  if [ -f "$SELF_DIR/../package.json" ] && grep -q '"name": "library-search"' "$SELF_DIR/../package.json" 2>/dev/null; then
+    (cd "$SELF_DIR/.." && pwd); return 0
+  fi
+  local saved="${XDG_CONFIG_HOME:-$HOME/.config}/library-search/app-home"
+  if [ -f "$saved" ] && [ -d "$(cat "$saved")" ]; then cat "$saved"; return 0; fi
+  if [ -d "$SELF_DIR/library-search-app" ]; then printf '%s\n' "$SELF_DIR/library-search-app"; return 0; fi
+  return 1
+}
+APPDIR="$(find_app_home)"
 LOGDIR="$APPDIR/logs"
-mkdir -p "$LOGDIR" 2>/dev/null || LOGDIR="${TMPDIR:-/tmp}"
+if [ -z "$APPDIR" ] || ! mkdir -p "$LOGDIR" 2>/dev/null || [ ! -w "$LOGDIR" ]; then
+  LOGDIR="${XDG_DATA_HOME:-$HOME/.local/share}/library-search/logs"
+  mkdir -p "$LOGDIR" 2>/dev/null || LOGDIR="${TMPDIR:-/tmp}"
+fi
 LOG="$LOGDIR/launcher.log"
 RUNLOG="$LOGDIR/last-run.log"
 # keep the log small
@@ -83,10 +93,7 @@ if [ -z "$APPRES" ]; then
   exit 1
 fi
 
-# --- library folders: the kit, plus the folder above it if the books live there ------------------------
-ROOT_ARGS=(--library-root "$KIT")
-PARENT="$(dirname "$KIT")"
-if ls -d "$PARENT"/[0-9][0-9]\ */ >/dev/null 2>&1; then ROOT_ARGS+=(--library-root "$PARENT"); fi
+# Library folders are not passed: the app finds them itself (chosen on its Library page, or next to it).
 
 # --- Firefox mode ------------------------------------------------------------------------------------
 PORT=8090
@@ -106,7 +113,7 @@ Re-install the app:  bash 6-install-or-update-search-app.sh"
   fi
   echo "Starting Library Search in Firefox at http://localhost:$PORT ..."
   ELECTRON_RUN_AS_NODE=1 "${NODE_CMD[@]}" "$server" --mode browser --port "$PORT" --open-browser \
-    "${ROOT_ARGS[@]}" --data-dir "$APPDIR" "$@" >>"$LOG" 2>&1 &
+    "$@" >>"$LOG" 2>&1 &
   SERVER_PID=$!
   trap 'kill $SERVER_PID 2>/dev/null' EXIT INT TERM
   if in_terminal; then
@@ -142,7 +149,7 @@ run_app() {
   { echo "=== $(date '+%Y-%m-%d %H:%M:%S') exit=$RC after ${ELAPSED}s: ${APP_CMD[*]} $*"; cat "$RUNLOG"; } >>"$LOG"
 }
 
-ARGS=(--disable-gpu "${ROOT_ARGS[@]}" --data-dir "$APPDIR" "$@")
+ARGS=(--disable-gpu "$@")
 run_app "${ARGS[@]}"
 
 # Old kernels / copied folders often break Chromium's sandbox: try once more without it.

@@ -3,24 +3,155 @@
 #   bash 6-install-or-update-search-app.sh                         newest release from GitHub (needs internet)
 #   bash 6-install-or-update-search-app.sh <file.tar.gz>           from a file, e.g. copied from a USB stick
 #   bash 6-install-or-update-search-app.sh https://.../x.tar.gz    from a direct link
+# The app can live anywhere; it doesn't have to be inside the library. It is installed into its own folder:
+# the git checkout this script is in, the folder used last time, <kit>/library-search-app, or ~/library-search.
 # Options:
-#   --kit <folder>       the "Ubuntu CF-30 Kit" folder (normally found automatically)
+#   --dir <folder>       install the app into this folder instead
+#   --kit <folder>       also put the 6-* shortcuts into this "Ubuntu CF-30 Kit" folder (normally found automatically)
+#   --pin / --no-pin     add the app to the sidebar (launcher) without asking / don't add it
+#   --launcher           only (re)create the menu entry + sidebar icon, don't download anything
+#   --remove-launcher    remove the menu entry and the sidebar icon (the app itself stays)
 # Settings (environment variables):
 #   LIBRARY_SEARCH_REPO=owner/name   GitHub repo (default: the "origin" of library-search-app/, else bogdanvidican/libsearch)
 #   GITHUB_TOKEN=...                 needed only if the repo is private
 #   LIBRARY_SEARCH_ELECTRON=13       pick the fallback build made with an older Electron (file name ends in -e13)
 
-usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { printf '\n!! %s\n' "$1" >&2; [ -t 0 ] && read -n 1 -s -r -p "Press any key to close."; echo; exit 1; }
+
+# --- menu entry + sidebar icon (per user, no sudo) ------------------------------------------------------
+# Ubuntu 16.04 (Unity) lists apps from ~/.local/share/applications/*.desktop; the sidebar ("launcher") is
+# the gsettings list com.canonical.Unity.Launcher favorites. Newer Ubuntu (GNOME) uses org.gnome.shell favorite-apps.
+DESKTOP_ID="library-search.desktop"
+APPS_DIR="$HOME/.local/share/applications"
+ICONS_DIR="$HOME/.local/share/icons/hicolor"
+ICON_PATH="$ICONS_DIR/256x256/apps/library-search.png"
+
+find_icons() { # folder with the app's PNG icons (installed app first, then the repo checkout)
+  local d
+  for d in "$APPDIR"/dist/library-search-linux-*/resources/app/assets/icons "$APPDIR/assets/icons"; do
+    [ -f "$d/256.png" ] && { printf '%s' "$d"; return 0; }
+  done
+  return 1
+}
+
+# Edits a gsettings string list with python3 (on every Ubuntu 16.04): add|remove <schema> <key> <entry>
+favorites_edit() {
+  local action="$1" schema="$2" key="$3" entry="$4" cur new
+  cur="$(gsettings get "$schema" "$key" 2>/dev/null)" || return 1
+  new="$(python3 -c '
+import ast, sys
+cur, entry, action = sys.argv[1].strip(), sys.argv[2], sys.argv[3]
+if cur.startswith("@as "):
+    cur = cur[4:]
+items = [i for i in (ast.literal_eval(cur) if cur else []) if i != entry]
+if action == "add":
+    # Before Unity markers (running apps, trash, devices) so it sits with the other apps.
+    at = next((n for n, i in enumerate(items) if i.startswith("unity://")), len(items))
+    items.insert(at, entry)
+print(str(items) if items else "@as []")
+' "$cur" "$entry" "$action")" || return 1
+  [ "$new" = "$cur" ] && return 0
+  gsettings set "$schema" "$key" "$new" 2>/dev/null
+}
+
+has_schema() { gsettings list-schemas 2>/dev/null | grep -qx "$1"; }
+
+sidebar() { # add|remove
+  command -v gsettings >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1 || return 1
+  if has_schema com.canonical.Unity.Launcher; then
+    favorites_edit "$1" com.canonical.Unity.Launcher favorites "application://$DESKTOP_ID"
+  elif has_schema org.gnome.shell; then
+    favorites_edit "$1" org.gnome.shell favorite-apps "$DESKTOP_ID"
+  else
+    return 1
+  fi
+}
+
+# Quotes a path for an Exec= line (desktop entry spec: double quotes; % must be doubled).
+exec_quote() {
+  case "$1" in *'"'*|*'`'*|*'$'*|*'\'*) return 1;; esac
+  printf '"%s"' "$(printf '%s' "$1" | sed 's/%/%%/g')"
+}
+
+install_launcher() {
+  local icons size q
+  icons="$(find_icons)" || { echo "!! No app icons found - install the app first."; return 1; }
+  for size in 16 24 32 48 64 128 256 512; do
+    [ -f "$icons/$size.png" ] || continue
+    mkdir -p "$ICONS_DIR/${size}x${size}/apps" && cp -f "$icons/$size.png" "$ICONS_DIR/${size}x${size}/apps/library-search.png"
+  done
+  if [ -f "$icons/library-search.svg" ]; then
+    mkdir -p "$ICONS_DIR/scalable/apps" && cp -f "$icons/library-search.svg" "$ICONS_DIR/scalable/apps/library-search.svg"
+  fi
+  local launch=""
+  for f in "$APPDIR"/dist/library-search-linux-*/resources/app/kit/6-search-the-library.sh "$APPDIR/kit/6-search-the-library.sh"; do
+    [ -f "$f" ] && { launch="$f"; break; }
+  done
+  [ -n "$launch" ] || { echo "!! The app isn't installed yet - nothing to put in the menu."; return 1; }
+  q="$(exec_quote "$launch")" || {
+    echo "!! The app folder path contains \" \` \$ or \\ - can't make a menu entry for it. Rename the folder."; return 1; }
+  mkdir -p "$APPS_DIR"
+  cat >"$APPS_DIR/.$DESKTOP_ID.tmp" <<EOF
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Library Search
+GenericName=Offline library
+Comment=Search all the books, Wikipedia, Khan Academy and Q&A sites - works without internet
+Keywords=search;books;library;wikipedia;khan;medicine;offline;
+Exec=bash $q
+Icon=$ICON_PATH
+Terminal=false
+Categories=Education;
+StartupNotify=true
+StartupWMClass=Library Search
+EOF
+  chmod +x "$APPS_DIR/.$DESKTOP_ID.tmp" && mv -f "$APPS_DIR/.$DESKTOP_ID.tmp" "$APPS_DIR/$DESKTOP_ID"
+  command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APPS_DIR" >/dev/null 2>&1
+  command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -q -t -f "$ICONS_DIR" >/dev/null 2>&1
+  echo "Menu entry:     Library Search (search for it in the Dash / app menu)"
+
+  local want="$PIN"
+  if [ -z "$want" ]; then
+    if [ -t 0 ]; then
+      printf 'Add Library Search to the sidebar? [Y/n] '
+      read -r ans
+      case "$ans" in n|N|no|No) want=no;; *) want=yes;; esac
+    else
+      want=no
+    fi
+  fi
+  if [ "$want" = "yes" ]; then
+    if sidebar add; then echo "Sidebar:        added (drag it to move it; right-click -> Unlock from Launcher to remove)"
+    else echo "Sidebar:        couldn't add it automatically - open the Dash, find Library Search, drag it to the sidebar"; fi
+  fi
+}
+
+remove_launcher() {
+  sidebar remove >/dev/null 2>&1
+  rm -f "$APPS_DIR/$DESKTOP_ID"
+  rm -f "$ICONS_DIR"/*/apps/library-search.png "$ICONS_DIR/scalable/apps/library-search.svg"
+  command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APPS_DIR" >/dev/null 2>&1
+  echo "Removed the Library Search menu entry and sidebar icon. (The app itself is still installed.)"
+}
 
 SELF="$(readlink -f "$0" 2>/dev/null || echo "$0")"
 SELF_DIR="$(cd "$(dirname "$SELF")" && pwd)"
 
 KIT=""
+APPDIR_OPT=""
 SRC=""
+PIN=""           # yes | no | "" (ask)
+MODE="install"   # install | launcher | remove-launcher
 while [ $# -gt 0 ]; do
   case "$1" in
     --kit) KIT="$2"; shift 2;;
+    --dir) APPDIR_OPT="$2"; shift 2;;
+    --pin) PIN=yes; shift;;
+    --no-pin) PIN=no; shift;;
+    --launcher) MODE=launcher; shift;;
+    --remove-launcher) MODE=remove-launcher; shift;;
     -h|--help) usage; exit 0;;
     *) SRC="$1"; shift;;
   esac
@@ -35,20 +166,44 @@ looks_like_kit() {
   [ -f "$1/0-README-start-here.md" ] || [ -f "$1/booklist-main.txt" ] || \
   [ -f "$1/5-start-offline-library-in-firefox.sh" ] || [ -d "$1/library-search-app" ]
 }
+# --- where is the app? It can be installed anywhere - not only inside the library / kit folder -----------
+#  1. this script ships inside the installed app:  <home>/dist/library-search-<os>-<arch>/resources/app/kit/
+#  2. a git checkout of the repo:                   <home>/kit/
+#  3. the folder remembered by 6-install-or-update-search-app.sh (~/.config/library-search/app-home)
+#  4. the kit layout:                               <kit>/library-search-app
+find_app_home() {
+  case "$SELF_DIR" in
+    */dist/library-search-*/resources/app/kit|*/dist/library-search-*/Resources/app/kit)
+      printf '%s\n' "${SELF_DIR%%/dist/library-search-*}"; return 0;;
+  esac
+  if [ -f "$SELF_DIR/../package.json" ] && grep -q '"name": "library-search"' "$SELF_DIR/../package.json" 2>/dev/null; then
+    (cd "$SELF_DIR/.." && pwd); return 0
+  fi
+  local saved="${XDG_CONFIG_HOME:-$HOME/.config}/library-search/app-home"
+  if [ -f "$saved" ] && [ -d "$(cat "$saved")" ]; then cat "$saved"; return 0; fi
+  if [ -d "$SELF_DIR/library-search-app" ]; then printf '%s\n' "$SELF_DIR/library-search-app"; return 0; fi
+  return 1
+}
+
+# The app's own folder: --dir, else where this script lives (inside the app, a git checkout, the folder used
+# last time, or <kit>/library-search-app), else <kit>/library-search-app when run from a kit, else ~/library-search.
+if [ -n "$APPDIR_OPT" ]; then APPDIR="$APPDIR_OPT"
+elif APPDIR="$(find_app_home)"; then :
+elif looks_like_kit "$PWD"; then APPDIR="$PWD/library-search-app"
+else APPDIR="$HOME/library-search"; fi
+mkdir -p "$APPDIR" 2>/dev/null || die "Can't create the app folder: $APPDIR"
+APPDIR="$(cd "$APPDIR" && pwd)"
+
+# Optional: the kit folder, so the 6-* shortcuts sit next to the other numbered scripts.
 if [ -z "$KIT" ]; then
-  d="$SELF_DIR"
-  while [ -n "$d" ] && [ "$d" != "/" ]; do
-    if [ "$(basename "$d")" = "library-search-app" ]; then KIT="$(dirname "$d")"; break; fi
-    d="$(dirname "$d")"
-  done
+  if looks_like_kit "$(dirname "$APPDIR")"; then KIT="$(dirname "$APPDIR")"
+  elif looks_like_kit "$SELF_DIR"; then KIT="$SELF_DIR"
+  elif looks_like_kit "$PWD"; then KIT="$PWD"; fi
 fi
-[ -z "$KIT" ] && looks_like_kit "$SELF_DIR" && KIT="$SELF_DIR"
-[ -z "$KIT" ] && looks_like_kit "$PWD" && KIT="$PWD"
-[ -z "$KIT" ] && die "Can't find the kit folder. Open a terminal in the 'Ubuntu CF-30 Kit' folder and run this there,
-or add:  --kit \"/path/to/Ubuntu CF-30 Kit\""
-[ -d "$KIT" ] || die "Kit folder not found: $KIT"
-KIT="$(cd "$KIT" && pwd)"
-APPDIR="$KIT/library-search-app"
+if [ -n "$KIT" ]; then KIT="$(cd "$KIT" 2>/dev/null && pwd)" || die "Kit folder not found: $KIT"; fi
+
+if [ "$MODE" = "remove-launcher" ]; then remove_launcher; exit 0; fi
+if [ "$MODE" = "launcher" ]; then install_launcher; exit $?; fi
 
 # Resolve a relative file argument before anything else changes.
 if [ -n "$SRC" ] && [ -f "$SRC" ]; then SRC="$(cd "$(dirname "$SRC")" && pwd)/$(basename "$SRC")"; fi
@@ -182,9 +337,14 @@ if ! mv "$NEW" "$DEST"; then
   die "Couldn't put the new version in place; the old one was kept."
 fi
 
+# Remember where the app is, so the kit's shortcuts and the next update find it wherever it lives.
+CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/library-search"
+mkdir -p "$CONF_DIR" 2>/dev/null && printf '%s\n' "$APPDIR" >"$CONF_DIR/app-home"
+
 # --- 4. launchers into the kit folder (temp file + rename, so updating this very script is safe) --------
 copied=0
 for f in "$DEST/resources/app/kit"/6-*; do
+  [ -n "$KIT" ] || break
   [ -f "$f" ] || continue
   name="$(basename "$f")"
   tmp="$KIT/.$name.tmp.$$"
@@ -197,13 +357,24 @@ for f in "$DEST/resources/app/kit"/6-*; do
 done
 rm -rf "$DEST.old"
 
+# The kit's double-click launcher uses the app icon too, once it is installed.
+echo
+install_launcher || true
+if [ -n "$KIT" ] && [ -f "$ICON_PATH" ] && [ -f "$KIT/6-search-the-library.desktop" ]; then
+  sed -i "s|^Icon=.*|Icon=$ICON_PATH|" "$KIT/6-search-the-library.desktop" 2>/dev/null
+fi
+
 echo
 echo "Library Search: $OLD_VER -> $NEW_VER"
 echo "Installed in:   $DEST"
-echo "Launchers:      $copied file(s) copied to $KIT"
+if [ -n "$KIT" ]; then echo "Launchers:      $copied file(s) copied to $KIT"; fi
 echo
-echo "Start it: double-click \"6 · Search the library\" or run:  bash 6-search-the-library.sh"
-echo "(First time double-clicking: right-click it -> Properties -> Permissions -> \"Allow executing file as program\".)"
+echo "Start it: click Library Search in the sidebar, or search for it in the Dash."
+if [ -n "$KIT" ]; then
+  echo "In the kit folder you can also double-click \"6 · Search the library\" or run:  bash 6-search-the-library.sh"
+  echo "(First time double-clicking: right-click it -> Properties -> Permissions -> \"Allow executing file as program\".)"
+fi
+echo "The first time, the app asks where your library is if it isn't next to the app."
 if [ "$OLD_VER" = "not installed" ]; then
   echo "On first start the app offers to build the book index (about an hour on the CF-30)."
 fi
