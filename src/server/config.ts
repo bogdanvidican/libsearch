@@ -26,6 +26,8 @@ export interface Config {
   kiwixPort: number;
   kiwixServe?: string;
   kiwixAutostart: boolean;
+  /** Check for and install new versions (off with --no-update or LIBRARY_SEARCH_NO_UPDATE=1). */
+  updates: boolean;
 }
 
 export type Args = Record<string, string[]>;
@@ -222,6 +224,7 @@ export function resolveConfig(argv: string[], appDir: string, defaults: Partial<
     kiwixPort: Number(flag(args, 'kiwix-port') || 8080),
     kiwixServe: flag(args, 'kiwix-serve'),
     kiwixAutostart: !boolFlag(args, 'no-kiwix-autostart'),
+    updates: !boolFlag(args, 'no-update') && !process.env.LIBRARY_SEARCH_NO_UPDATE,
   };
 }
 

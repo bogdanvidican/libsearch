@@ -136,6 +136,38 @@ if [ -n "$NATIVE" ] && [ ${#GUI_VARIANTS[@]} -gt 0 ]; then
   if [ -n "$GUI_OK" ]; then ok "GUI self-test (native i386): $GUI_OK"; else bad "GUI self-test failed natively (see gui-*.log)"; fi
 fi
 
+# --- (f) self-update: the install step the app runs when it closes, with xenial's bash / tar / pgrep -----------
+section "(f) update install (6-install-or-update-search-app.sh --wait --status-file)"
+V="$(cat "$APP/app-version.txt" 2>/dev/null)"
+TB="/w/dist/library-search-linux-ia32-v$V.tar.gz"
+if [ ! -f "$TB" ]; then
+  note "update install skipped: no $TB"
+else
+  U=/tmp/upd
+  rm -rf "$U" && mkdir -p "$U/home/dist/.update" "$U/user"
+  cp "$TB" "$U/home/dist/.update/"
+  [ -f "$TB.sha256" ] && cp "$TB.sha256" "$U/home/dist/.update/"
+  SRC="$U/home/dist/.update/$(basename "$TB")"
+  DEST="$U/home/dist/library-search-linux-ia32"
+  INSTALL=(bash "$APPRES/kit/6-install-or-update-search-app.sh" "$SRC" --dir "$U/home" --wait --no-pin --status-file "$U/status")
+  # The app was opened again (a process runs $DEST/library-search): wait, then leave it alone.
+  mkdir -p "$DEST" && echo 0.0.1 >"$DEST/app-version.txt"
+  bash -c 'sleep 120; exit 0' "$DEST/library-search" &
+  FAKE=$!
+  HOME="$U/user" LIBRARY_SEARCH_WAIT_SECONDS=3 "${INSTALL[@]}" >"$OUT/update-busy.log" 2>&1
+  rc=$?
+  kill "$FAKE" 2>/dev/null
+  if [ $rc -eq 2 ] && [ "$(cat "$U/status" 2>/dev/null)" = "busy" ] && [ "$(cat "$DEST/app-version.txt")" = "0.0.1" ]; then
+    ok "update waits while the app is open and then leaves it alone (busy)"
+  else bad "update busy case: exit $rc, status '$(cat "$U/status" 2>/dev/null)' (see update-busy.log)"; fi
+  # The app is closed: the new version goes in.
+  HOME="$U/user" "${INSTALL[@]}" >"$OUT/update-install.log" 2>&1
+  rc=$?
+  if [ $rc -eq 0 ] && [ "$(cat "$U/status" 2>/dev/null)" = "ok $V" ] && [ -x "$DEST/library-search" ] && [ ! -e "$DEST.old" ]; then
+    ok "update installed with xenial's bash/tar: $(cat "$U/status")"
+  else bad "update install: exit $rc, status '$(cat "$U/status" 2>/dev/null)' (see update-install.log)"; fi
+fi
+
 echo
 echo "== Summary =="
 printf '%s\n' "${RESULTS[@]}"

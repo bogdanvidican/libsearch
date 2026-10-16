@@ -15,6 +15,7 @@ import type {
   OpenResult,
   Settings,
   Status,
+  UpdateStatus,
 } from '../shared/api';
 import { S } from './strings';
 
@@ -120,6 +121,10 @@ export const api = {
   cancelIndex: () => request<IndexStatus | BuildProgress>('POST', '/api/index/cancel', {}),
   open: (req: OpenRequest) => request<OpenResult>('POST', '/api/open', req),
   saveSettings: (patch: Partial<Settings>) => request<Settings>('POST', '/api/settings', patch),
+  updateCheck: () => request<UpdateStatus>('POST', '/api/update/check', {}),
+  updateDownload: () => request<UpdateStatus>('POST', '/api/update/download', {}),
+  /** Starts the install script and closes the app; it opens again when the update is in. */
+  updateInstall: () => request<UpdateStatus>('POST', '/api/update/install', {}),
 };
 
 /** URL that opens a reader path in an outside browser (Firefox). ZIM pages go straight to kiwix-serve. */

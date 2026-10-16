@@ -19,7 +19,9 @@ in the Document Viewer at the right page, articles open inside the app.
    - With internet it downloads the newest version from GitHub. Without internet, copy the
      `library-search-linux-ia32-vX.Y.Z.tar.gz` file (and `6-install-or-update-search-app.sh`) from a USB stick
      into this folder and run:  `bash 6-install-or-update-search-app.sh library-search-linux-ia32-vX.Y.Z.tar.gz`
-   - Run the same command again later to update. Don't use sudo.
+   - Later versions install themselves: when the computer is online, the app downloads a new version in the
+     background and installs it when you close the app (switch it off under **Library -> Updates**). Without
+     internet, update from a USB stick with the same command. Don't use sudo.
    - The installer adds **Library Search** to the app menu and asks whether to put its icon in the sidebar
      (answer Y). Later: `bash 6-install-or-update-search-app.sh --launcher` re-creates it, `--remove-launcher` removes it.
    - The app doesn't have to live in this folder: `--dir <folder>` installs it anywhere. If it can't find the

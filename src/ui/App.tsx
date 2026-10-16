@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, ApiError } from './api';
+import { LoaderCircle } from 'lucide-react';
+import { api, ApiError, MODE } from './api';
 import { AppContext, AppCtx, OpenTarget, ToastInput } from './context';
 import { useCategories, useKiwixBooks, useRoute, useStatus } from './hooks';
 import { navigate, Route } from './router';
@@ -42,6 +43,8 @@ export function App() {
   const { status, error: statusError, refresh } = useStatus();
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [kiwixStarting, setKiwixStarting] = useState(false);
+  const [restarting, setRestarting] = useState(false);
+  const updateToastShown = useRef(false);
   const lastResults = useRef('');
   const lastQuery = useRef('');
   const getResultsHash = useCallback(() => lastResults.current, []);
@@ -131,6 +134,31 @@ export function App() {
       });
   }, [refresh, toast]);
 
+  const installUpdate = useCallback(() => {
+    setRestarting(true);
+    api.updateInstall().then(
+      (u) => {
+        if (u.state !== 'installing') {
+          setRestarting(false);
+          toast({ kind: 'error', message: u.error ? u.error.message : S.updates.restartFailed, fix: u.error ? u.error.fix : undefined });
+          refresh();
+        }
+      },
+      (e) => {
+        setRestarting(false);
+        toast(errorToast(e));
+      },
+    );
+  }, [refresh, toast]);
+
+  // First start after an update: say so once.
+  useEffect(() => {
+    if (status && status.update && status.update.updatedFrom && !updateToastShown.current) {
+      updateToastShown.current = true;
+      toast({ kind: 'success', message: S.updates.updatedToast(status.update.current) });
+    }
+  }, [status, toast]);
+
   const ctx: AppCtx = useMemo(
     () => ({
       status,
@@ -146,8 +174,9 @@ export function App() {
       cancelBuild,
       startKiwix,
       kiwixStarting,
+      installUpdate,
     }),
-    [status, statusError, refresh, kiwixBooks, categories, toast, openBook, openReader, getResultsHash, startBuild, cancelBuild, startKiwix, kiwixStarting],
+    [status, statusError, refresh, kiwixBooks, categories, toast, openBook, openReader, getResultsHash, startBuild, cancelBuild, startKiwix, kiwixStarting, installUpdate],
   );
 
   const onSearch = useCallback(
@@ -192,7 +221,7 @@ export function App() {
         </a>
         <Header route={route} onSearch={onSearch} libraryAlert={libraryAlert} lastQuery={lastQuery.current} />
         <main id="main" className={'main main--' + route.name} tabIndex={-1}>
-          {statusError && status ? (
+          {statusError && status && !restarting ? (
             <div className="main__banner">
               <NoticeBox kind="error" compact title={S.status.offline} fix={S.status.offlineFix} />
             </div>
@@ -201,6 +230,19 @@ export function App() {
         </main>
         <StatusBar status={status} error={statusError} />
         <Toasts items={toasts} onDismiss={dismiss} />
+        {restarting ? (
+          <div className="restart" role="alertdialog" aria-modal="true" aria-labelledby="restart-title" aria-describedby="restart-body">
+            <div className="restart__card">
+              <LoaderCircle className="spin restart__icon" size={36} aria-hidden="true" />
+              <h2 id="restart-title" className="restart__title">
+                {S.updates.restartTitle}
+              </h2>
+              <p id="restart-body" className="restart__body">
+                {MODE === 'browser' ? S.updates.restartBodyBrowser : S.updates.restartBody}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </div>
     </AppContext.Provider>
   );

@@ -13,7 +13,7 @@ const APP_DIR = path.resolve(__dirname, '..', '..');
 const args = parseArgs(process.argv.slice(1));
 const cfg = resolveConfig(process.argv.slice(1), APP_DIR);
 const SELF_TEST = boolFlag(args, 'self-test');
-const PASS_THROUGH = ['library-root', 'data-dir', 'kiwix-port', 'kiwix-serve', 'no-kiwix-autostart'];
+const PASS_THROUGH = ['library-root', 'data-dir', 'kiwix-port', 'kiwix-serve', 'no-kiwix-autostart', 'no-update'];
 
 // Old Intel GMA graphics + 32-bit: software rendering is the reliable choice.
 if (process.argv.indexOf('--disable-gpu') >= 0 || (process.platform === 'linux' && process.arch === 'ia32')) {
@@ -90,6 +90,8 @@ function startServer(): void {
   // Only explicit flags are passed on: the server finds the library itself (folders chosen in the app,
   // or auto-detection), so changing the folder in the app works without a restart.
   for (const k of PASS_THROUGH) for (const v of args[k] || []) serverArgs.push(`--${k}`, v);
+  // The self-test (m0-check.sh) only looks: it must not install a downloaded update when it quits.
+  if (SELF_TEST) serverArgs.push('--no-update');
   const entry = path.join(APP_DIR, 'build', 'server', 'server.js');
   log(`starting server: ${entry} ${serverArgs.join(' ')}`);
   const child = fork(entry, serverArgs, {
@@ -107,6 +109,11 @@ function startServer(): void {
       serverUrl = m.url;
       log(`server ready at ${serverUrl}`);
       if (win) void win.loadURL(serverUrl);
+    } else if (m && m.type === 'quit-for-update') {
+      // "Restart now": the install script is waiting for the app to close; it starts the new version.
+      log('closing so the update can be installed');
+      quitting = true;
+      app.quit();
     }
   });
   child.on('exit', (code, signal) => {
@@ -295,7 +302,8 @@ if (!SELF_TEST && !app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     log(`--- Library Search ${__APP_VERSION__} (Electron ${process.versions.electron}, ${process.platform}-${process.arch})`);
-    // Zero network: only this computer (the app's server and kiwix-serve) may be contacted.
+    // Zero network for the window: only this computer (the app's server and kiwix-serve) may be contacted.
+    // (Update checks run in the server process - src/server/update.ts - not in the window.)
     session.defaultSession.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (d, cb) => cb({ cancel: !isLocalUrl(d.url) }));
     if (process.platform !== 'darwin') Menu.setApplicationMenu(null);
     createWindow();

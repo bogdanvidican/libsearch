@@ -1,10 +1,14 @@
 {
   "name": "library-search",
   "productName": "Library Search",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Offline search for the Community Rebuild Library (books + Kiwix ZIMs)",
   "author": "Bogdan Vidican",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bogdanvidican/libsearch.git"
+  },
   "private": true,
   "main": "build/main/main.js",
   "desktopName": "library-search.desktop",

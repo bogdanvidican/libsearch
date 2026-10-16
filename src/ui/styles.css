@@ -2006,6 +2006,104 @@ mark {
   font-size: 15px;
 }
 
+/* Updates card (Library) */
+.card__ok--top {
+  margin: 0 0 10px;
+}
+.card .build {
+  margin-top: 12px;
+}
+.notes {
+  margin-top: 8px;
+}
+.notes summary {
+  padding: 10px 0; /* 44px target */
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+.notes__body {
+  white-space: pre-line;
+  color: var(--text-2);
+  max-height: 220px;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.toggle:hover {
+  border-color: var(--hover-border);
+}
+.toggle__input {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.toggle__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.toggle__label {
+  font-weight: 600;
+  color: var(--text);
+}
+.toggle__hint {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+/* "Installing the update…" while the app closes */
+.restart {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+.restart__card {
+  max-width: 520px;
+  padding: 32px 36px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-2);
+}
+.restart__icon {
+  color: var(--accent);
+}
+.restart__title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 14px 0 8px;
+}
+.restart__body {
+  color: var(--text-2);
+}
+
 /* ---------- Status bar ---------- */
 
 .statusbar {

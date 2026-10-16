@@ -30,6 +30,8 @@ const installedElectron = JSON.parse(readFileSync(join(root, 'node_modules/elect
 const electronVersion = arg('electron', installedElectron);
 const electronOverride = electronVersion !== installedElectron;
 const electronMajor = electronVersion.split('.')[0];
+// Fallback builds (older Electron) are published as ...-v<version>-e<major>.tar.gz; the app looks for its own kind.
+const releaseSuffix = electronOverride ? `-e${electronMajor}` : '';
 
 if (platform === 'linux' && arch === 'ia32' && Number(electronMajor) >= 19) {
   console.error(`Electron ${electronVersion} has no linux-ia32 build (last one is 18.x). Use --electron 17.4.11 or older.`);
@@ -68,6 +70,8 @@ const stagedPkg = {
   // Linux: tells Electron which .desktop file it belongs to (Unity launcher integration).
   desktopName: pkg.desktopName,
   dependencies: pkg.dependencies,
+  // Which release file updates this build (src/server/update.ts).
+  releaseSuffix,
 };
 writeFileSync(join(stage, 'package.json'), JSON.stringify(stagedPkg, null, 2) + '\n');
 cpSync(join(root, 'build'), join(stage, 'build'), {
@@ -147,8 +151,7 @@ if (platform === 'linux') {
     }
   }
 
-  const suffix = electronOverride ? `-e${electronMajor}` : '';
-  const tarName = `library-search-${platform}-${arch}-v${pkg.version}${suffix}.tar.gz`;
+  const tarName = `library-search-${platform}-${arch}-v${pkg.version}${releaseSuffix}.tar.gz`;
   const tarPath = join(dist, tarName);
   rmSync(tarPath, { force: true });
   // bsdtar on macOS: ustar format (GNU tar 1.28 on 16.04 reads it without pax/xattr warnings),

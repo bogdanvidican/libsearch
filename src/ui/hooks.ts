@@ -35,7 +35,8 @@ export function useStatus(): { status: Status | null; error: Notice | null; refr
         if (!alive) return;
         setStatus(s);
         setError(null);
-        const busy = s.index.build.running || s.kiwix.state === 'starting';
+        const u = s.update ? s.update.state : '';
+        const busy = s.index.build.running || s.kiwix.state === 'starting' || u === 'checking' || u === 'downloading';
         timer = window.setTimeout(run, busy ? 1000 : 5000);
       } catch (e) {
         if (!alive) return;

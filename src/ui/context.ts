@@ -29,6 +29,8 @@ export interface AppCtx {
   cancelBuild: () => void;
   startKiwix: () => void;
   kiwixStarting: boolean;
+  /** "Restart now and update": installs the downloaded version; the app closes and opens again. */
+  installUpdate: () => void;
 }
 
 export const AppContext = createContext<AppCtx | null>(null);

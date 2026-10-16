@@ -11,13 +11,44 @@
 #   --pin / --no-pin     add the app to the sidebar (launcher) without asking / don't add it
 #   --launcher           only (re)create the menu entry + sidebar icon, don't download anything
 #   --remove-launcher    remove the menu entry and the sidebar icon (the app itself stays)
+# Used by the app when it updates itself (src/server/update.ts):
+#   --wait               if the app is open, wait for it to close (2 minutes) instead of stopping
+#   --relaunch           start the app again afterwards - the new version, or the old one if the update failed
+#   --relaunch-firefox   the same, but the simple version in Firefox
+#   --status-file <f>    write the result there: "ok <version>", "busy" (app still open) or "failed <reason>"
 # Settings (environment variables):
 #   LIBRARY_SEARCH_REPO=owner/name   GitHub repo (default: the "origin" of library-search-app/, else bogdanvidican/libsearch)
 #   GITHUB_TOKEN=...                 needed only if the repo is private
 #   LIBRARY_SEARCH_ELECTRON=13       pick the fallback build made with an older Electron (file name ends in -e13)
 
-usage() { sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; }
-die() { printf '\n!! %s\n' "$1" >&2; [ -t 0 ] && read -n 1 -s -r -p "Press any key to close."; echo; exit 1; }
+usage() { sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; }
+die() {
+  printf '\n!! %s\n' "$1" >&2
+  write_status "failed $(printf '%s' "$1" | head -n 1)"
+  relaunch_app
+  [ -t 0 ] && read -n 1 -s -r -p "Press any key to close."
+  echo
+  exit 1
+}
+write_status() { [ -n "$STATUS_FILE" ] && printf '%s\n' "$1" >"$STATUS_FILE" 2>/dev/null; return 0; }
+
+# --relaunch: start the app again when done - the new version, or the old one when the update failed.
+relaunch_app() {
+  [ -n "$RELAUNCH" ] && [ -n "$APPDIR" ] || return 0
+  local mode="$RELAUNCH" f launch=""
+  RELAUNCH=""
+  for f in ${DEST:+"$DEST/resources/app/kit/6-search-the-library.sh"} \
+      "$APPDIR"/dist/library-search-linux-*/resources/app/kit/6-search-the-library.sh; do
+    case "$f" in *.old/*) continue;; esac
+    [ -f "$f" ] && { launch="$f"; break; }
+  done
+  [ -n "$launch" ] || return 0
+  echo "Starting Library Search again: $launch"
+  unset ELECTRON_RUN_AS_NODE
+  if [ "$mode" = "firefox" ]; then nohup bash "$launch" --firefox </dev/null >/dev/null 2>&1 &
+  else nohup bash "$launch" </dev/null >/dev/null 2>&1 &
+  fi
+}
 
 # --- menu entry + sidebar icon (per user, no sudo) ------------------------------------------------------
 # Ubuntu 16.04 (Unity) lists apps from ~/.local/share/applications/*.desktop; the sidebar ("launcher") is
@@ -144,6 +175,11 @@ APPDIR_OPT=""
 SRC=""
 PIN=""           # yes | no | "" (ask)
 MODE="install"   # install | launcher | remove-launcher
+WAIT=""
+RELAUNCH=""      # app | firefox | ""
+STATUS_FILE=""
+APPDIR=""
+DEST=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --kit) KIT="$2"; shift 2;;
@@ -152,6 +188,10 @@ while [ $# -gt 0 ]; do
     --no-pin) PIN=no; shift;;
     --launcher) MODE=launcher; shift;;
     --remove-launcher) MODE=remove-launcher; shift;;
+    --wait) WAIT=1; shift;;
+    --relaunch) RELAUNCH=app; shift;;
+    --relaunch-firefox) RELAUNCH=firefox; shift;;
+    --status-file) STATUS_FILE="$2"; shift 2;;
     -h|--help) usage; exit 0;;
     *) SRC="$1"; shift;;
   esac
@@ -325,7 +365,21 @@ DEST="$APPDIR/dist/$TOP"
 OLD_VER="not installed"
 [ -f "$DEST/app-version.txt" ] && OLD_VER="$(cat "$DEST/app-version.txt")"
 
-if command -v pgrep >/dev/null 2>&1 && pgrep -f "$DEST/library-search" >/dev/null 2>&1; then
+# Every process of the app (window, server, indexer) runs $DEST/library-search. pgrep -f takes a regular
+# expression, so the path is escaped (folder names may contain "(", "+", "." ...).
+APP_RE="$(printf '%s' "$DEST/library-search" | sed 's/[][\.*^$+?(){}|]/\\&/g')"
+app_running() { command -v pgrep >/dev/null 2>&1 && pgrep -f "$APP_RE" >/dev/null 2>&1; }
+if [ -n "$WAIT" ] && app_running; then
+  echo "Waiting for Library Search to close..."
+  waited=0
+  while app_running && [ "$waited" -lt "${LIBRARY_SEARCH_WAIT_SECONDS:-120}" ]; do sleep 1; waited=$((waited + 1)); done
+fi
+if app_running; then
+  if [ -n "$WAIT" ]; then
+    write_status busy
+    echo "Library Search is open, so the update wasn't installed now. It is installed the next time the app closes."
+    exit 2
+  fi
   die "Library Search is running. Close it (and its Firefox version, if open), then run this again."
 fi
 
@@ -378,4 +432,7 @@ echo "The first time, the app asks where your library is if it isn't next to the
 if [ "$OLD_VER" = "not installed" ]; then
   echo "On first start the app offers to build the book index (about an hour on the CF-30)."
 fi
+echo "Later versions install themselves when the computer is online (Library -> Updates in the app)."
+write_status "ok $NEW_VER"
+relaunch_app
 exit 0

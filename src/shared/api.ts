@@ -166,7 +166,43 @@ export interface Status {
   index: IndexStatus;
   kiwix: KiwixStatus;
   tools: ToolStatus;
+  update: UpdateStatus;
   notices: Notice[];
+}
+
+export type UpdateState =
+  | 'unsupported' // a developer copy, macOS, or started with --no-update (see `reason`)
+  | 'idle' // not checked yet
+  | 'checking'
+  | 'up-to-date'
+  | 'offline' // GitHub couldn't be reached (no internet)
+  | 'available' // a newer version exists; not downloaded yet (automatic updates are off)
+  | 'downloading'
+  | 'ready' // downloaded and checked: installed when the app closes, or on "Restart now"
+  | 'installing' // the install script was started; the app is about to close
+  | 'error';
+
+export interface UpdateStatus {
+  state: UpdateState;
+  /** Version running now. */
+  current: string;
+  /** Newest published version, when known. */
+  latest?: string;
+  /** Version downloaded and waiting to be installed. */
+  downloaded?: string;
+  /** Release notes of `latest` (plain text, shortened). */
+  notes?: string;
+  /** Bytes received / expected while downloading. */
+  received?: number;
+  total?: number;
+  checkedAt?: number;
+  /** Check, download and install by itself (Settings.autoUpdate). */
+  auto: boolean;
+  /** Why the app can't update itself (state 'unsupported'). */
+  reason?: string;
+  error?: Notice;
+  /** Set when this run is the first after an update: the version it replaced. */
+  updatedFrom?: string;
 }
 
 export interface Category {
@@ -229,6 +265,8 @@ export interface Settings {
   theme: ThemeSetting;
   /** Library folders chosen in the app (empty = find them automatically next to the app). */
   libraryRoots: string[];
+  /** Look for new versions on GitHub when online, download them, and install them when the app closes. */
+  autoUpdate: boolean;
 }
 
 export type RootsSource = 'flag' | 'env' | 'settings' | 'auto';

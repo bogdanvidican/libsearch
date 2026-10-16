@@ -1,4 +1,4 @@
-import type { BuildProgress, KiwixStatus } from '../shared/api';
+import type { BuildProgress, KiwixStatus, UpdateStatus } from '../shared/api';
 import { S } from './strings';
 
 export function percent(done: number, total: number): number {
@@ -58,4 +58,55 @@ export function kiwixTone(k: KiwixStatus): 'ok' | 'busy' | 'warn' | 'bad' {
     default:
       return 'bad';
   }
+}
+
+export function updateHeadline(u: UpdateStatus): string {
+  const v = u.downloaded || u.latest || '';
+  switch (u.state) {
+    case 'unsupported':
+      return S.updates.unsupported;
+    case 'checking':
+      return S.updates.checking;
+    case 'up-to-date':
+      return S.updates.upToDate;
+    case 'offline':
+      return S.updates.offline;
+    case 'available':
+      return S.updates.available(v);
+    case 'downloading':
+      return S.updates.downloading(v);
+    case 'ready':
+      return S.updates.ready(v);
+    case 'installing':
+      return S.updates.installing;
+    case 'error':
+      return S.updates.failed;
+    default:
+      return S.updates.notChecked;
+  }
+}
+
+export function updateTone(u: UpdateStatus): 'ok' | 'busy' | 'warn' | 'bad' | undefined {
+  switch (u.state) {
+    case 'up-to-date':
+      return 'ok';
+    case 'checking':
+    case 'available':
+    case 'downloading':
+    case 'ready':
+    case 'installing':
+      return 'busy';
+    case 'offline':
+      return 'warn';
+    case 'error':
+      return 'bad';
+    default:
+      return undefined;
+  }
+}
+
+/** Megabytes for "12.3 of 78 MB": one decimal below 10 MB. */
+export function megabytes(bytes: number): string {
+  const mb = bytes / 1048576;
+  return mb < 10 ? mb.toFixed(1) : String(Math.round(mb));
 }

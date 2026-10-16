@@ -1,6 +1,7 @@
 // Dev-only mock of the Library Search API, for working on the UI without an index or kiwix-serve.
 //   node scripts/build.mjs && node scripts/mock-server.mjs [port]      (default 8099)
 // Switch states:  /__mock?index=ok|none|building&kiwix=running|stopped|no-zims|port-busy&mode=browser|electron
+//                 &update=up-to-date|available|downloading|ready|updated|offline|error|unsupported
 import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join, extname, normalize } from 'node:path';
@@ -17,7 +18,33 @@ const state = {
   mode: 'browser', // browser | electron (electron shows the Find button)
   kiwix: 'running',
   build: { done: 0, total: 546, startedAt: 0, phase: 'idle', finishedAt: 0 },
+  update: 'up-to-date',
+  auto: true,
 };
+
+const NOTES = 'Library Search updates itself: new versions download in the background and install when the app closes.\n\n- Updates card on the Library page\n- "Update ready" in the status bar';
+
+function updateStatus() {
+  const base = { current: '0.2.0', auto: state.auto, checkedAt: Date.now() - 40 * 60000 };
+  switch (state.update) {
+    case 'available':
+      return { ...base, state: 'available', latest: '0.3.0', notes: NOTES };
+    case 'downloading':
+      return { ...base, state: 'downloading', latest: '0.3.0', notes: NOTES, received: 31 * 1048576, total: 78 * 1048576 };
+    case 'ready':
+      return { ...base, state: 'ready', latest: '0.3.0', downloaded: '0.3.0', notes: NOTES };
+    case 'updated':
+      return { ...base, state: 'up-to-date', latest: '0.2.0', updatedFrom: '0.1.1' };
+    case 'offline':
+      return { ...base, state: 'offline', error: { kind: 'info', code: 'update-offline', message: "Couldn't reach GitHub: this computer seems to be offline.", fix: 'Connect to the internet and click Check for updates. The app also checks by itself each time it starts.' } };
+    case 'error':
+      return { ...base, state: 'error', latest: '0.3.0', downloaded: '0.3.0', error: { kind: 'error', code: 'update-install-failed', message: 'Version 0.3.0 could not be installed: Unpacking failed (disk full?)', fix: 'Click Try installing again. If it keeps failing, the details are in logs/update.log.' } };
+    case 'unsupported':
+      return { ...base, state: 'unsupported', reason: 'This is a developer copy: update it with git pull and npm run build.' };
+    default:
+      return { ...base, state: 'up-to-date', latest: '0.2.0' };
+  }
+}
 
 const CATEGORIES = [
   ['01 Medicine', 'Medicine', 212, 3],
@@ -171,6 +198,7 @@ function status() {
       startedByUs: true,
     },
     tools: { pdftotext: true, pdfinfo: true, evince: true, firefox: true },
+    update: updateStatus(),
     notices: [],
   };
 }
@@ -255,12 +283,27 @@ http
       }
       if (u.searchParams.get('kiwix')) state.kiwix = u.searchParams.get('kiwix');
       if (u.searchParams.get('mode')) state.mode = u.searchParams.get('mode');
-      return json(res, 200, { index: state.index, kiwix: state.kiwix, mode: state.mode });
+      if (u.searchParams.get('update')) state.update = u.searchParams.get('update');
+      return json(res, 200, { index: state.index, kiwix: state.kiwix, mode: state.mode, update: state.update });
     }
 
     if (p.indexOf('/api/') === 0) {
       if (req.headers['x-token'] !== TOKEN) return json(res, 401, { error: { kind: 'error', code: 'bad_token', message: 'Missing or wrong token.' } });
       if (p === '/api/status') return json(res, 200, status(), 40);
+      if (p === '/api/update/check') {
+        if (state.update === 'offline' || state.update === 'error' || state.update === 'updated') state.update = 'up-to-date';
+        return json(res, 200, updateStatus(), 1200);
+      }
+      if (p === '/api/update/download') {
+        state.update = 'downloading';
+        return json(res, 200, updateStatus(), 100);
+      }
+      if (p === '/api/update/install') return json(res, 200, { ...updateStatus(), state: 'installing' }, 100);
+      if (p === '/api/settings') {
+        const body = req.method === 'POST' ? await readBody(req) : {};
+        if (typeof body.autoUpdate === 'boolean') state.auto = body.autoUpdate;
+        return json(res, 200, { theme: body.theme || 'system', libraryRoots: [], autoUpdate: state.auto });
+      }
       if (p === '/api/search') return json(res, 200, bookSearch(u.searchParams.get('q') || '', u.searchParams.get('category') || ''), 650);
       if (p === '/api/kiwix/books') {
         if (state.kiwix !== 'running') return json(res, 200, []);

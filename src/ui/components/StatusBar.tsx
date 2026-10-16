@@ -1,4 +1,4 @@
-import { BookOpen, ChevronRight, Globe } from 'lucide-react';
+import { BookOpen, ChevronRight, Download, Globe } from 'lucide-react';
 import type { Notice, Status } from '../../shared/api';
 import { kiwixLabel, kiwixTone, percent } from '../format';
 import { navigate } from '../router';
@@ -63,6 +63,16 @@ export function StatusBar({ status, error }: { status: Status | null; error: Not
             {S.status.encyclopedias}: {kiwixLabel(status.kiwix)}
           </span>
         </span>
+        {status.update && status.update.state === 'ready' ? (
+          <>
+            <span className="statusbar__sep" aria-hidden="true" />
+            <span className="statusbar__item">
+              <Download size={18} aria-hidden="true" className="statusbar__icon" />
+              <span className="dot dot--busy" aria-hidden="true" />
+              <span>{S.updates.statusReady}</span>
+            </span>
+          </>
+        ) : null}
         <span className="statusbar__more">
           {S.status.details}
           <ChevronRight size={18} aria-hidden="true" />

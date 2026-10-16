@@ -58,15 +58,23 @@ function listen(port: number, triesLeft: number): void {
         if (s.state !== 'running' && s.message) process.stderr.write(`kiwix: ${s.state}: ${s.message}\n`);
       });
     }
+    app.updater.start();
   });
 
   let stopping = false;
   const stop = () => {
     if (stopping) return;
     stopping = true;
+    // A downloaded update goes in now that the app closes (the install script waits until it is gone).
+    if (app.updater.installOnExit()) process.stdout.write('Installing the downloaded update after the app closes.\n');
     app.shutdown();
     server.close();
     setTimeout(() => process.exit(0), 300).unref();
+  };
+  // "Restart now": the install script is running and waits for the whole app to close.
+  app.onQuitForUpdate = () => {
+    if (cfg.mode === 'electron' && process.send) process.send({ type: 'quit-for-update' });
+    else stop();
   };
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);

@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Settings, ThemeSetting } from '../shared/api';
 
-const DEFAULTS: Settings = { theme: 'system', libraryRoots: [] };
+const DEFAULTS: Settings = { theme: 'system', libraryRoots: [], autoUpdate: true };
 const THEMES: ThemeSetting[] = ['system', 'light', 'dark'];
 
 export function settingsFile(dataDir: string): string {
@@ -16,6 +16,7 @@ export function loadSettings(dataDir: string): Settings {
     return {
       theme: THEMES.indexOf(raw.theme as ThemeSetting) >= 0 ? (raw.theme as ThemeSetting) : DEFAULTS.theme,
       libraryRoots: cleanRoots(raw.libraryRoots),
+      autoUpdate: typeof raw.autoUpdate === 'boolean' ? raw.autoUpdate : DEFAULTS.autoUpdate,
     };
   } catch (e) {
     return { ...DEFAULTS };
@@ -34,6 +35,7 @@ export function saveSettings(dataDir: string, patch: Partial<Settings>): Setting
   const next = loadSettings(dataDir);
   if (patch.theme && THEMES.indexOf(patch.theme) >= 0) next.theme = patch.theme;
   if (patch.libraryRoots !== undefined) next.libraryRoots = cleanRoots(patch.libraryRoots);
+  if (typeof patch.autoUpdate === 'boolean') next.autoUpdate = patch.autoUpdate;
   fs.mkdirSync(dataDir, { recursive: true });
   const file = settingsFile(dataDir);
   fs.writeFileSync(file + '.tmp', JSON.stringify(next, null, 2) + '\n');

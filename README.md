@@ -98,6 +98,10 @@ Launchers for the kit root are kept in `kit/` and copied into the kit folder by 
 
    Attach `-e13`/`-e11` fallback tarballs too when they exist.
 
+   Installed apps (0.2.0 and later) find the release by themselves: it must be the repo's **latest** release (not a
+   draft or pre-release), keep the asset names above, and include the `.sha256` files. The repo must be public
+   (or each machine needs `GITHUB_TOKEN`). They download it in the background and install it when the app closes.
+
 ## Installing on the CF-30
 
 - **With git + internet:** in the kit folder:
@@ -114,6 +118,12 @@ Launchers for the kit root are kept in `kit/` and copied into the kit folder by 
 
 The install script keeps the previous version as `….old` until the new one is in place, refuses to run as root,
 and prints `old -> new` versions.
+
+**Updates after that:** from 0.2.0 on, the app updates itself whenever the computer is online: it checks GitHub
+shortly after it starts, downloads a new version in the background, and installs it when the app is closed
+(Library → Updates has "Check for updates", "Restart now and update" and an off switch). It runs the same install
+script (`--wait --status-file …`); its output is in `logs/update.log`. `--no-update` turns it off for one run.
+Copies on 0.1.x need one manual update with the script first.
 
 **The app can live anywhere** (it doesn't have to be inside the library or the kit):
 - Install location: `--dir <folder>`, else the git checkout the script is in, else the folder used last time

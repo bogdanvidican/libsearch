@@ -14,7 +14,13 @@ const out = join(root, 'build');
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, 'ui'), { recursive: true });
 
-const define = { __APP_VERSION__: JSON.stringify(pkg.version) };
+// The GitHub repo the app updates itself from (package.json "repository"; LIBRARY_SEARCH_REPO overrides it at run time).
+const repoUrl = typeof pkg.repository === 'string' ? pkg.repository : (pkg.repository && pkg.repository.url) || '';
+const repoMatch = /github\.com[/:]([^/]+\/[^/]+?)(\.git)?$/.exec(repoUrl);
+const define = {
+  __APP_VERSION__: JSON.stringify(pkg.version),
+  __UPDATE_REPO__: JSON.stringify(repoMatch ? repoMatch[1] : 'bogdanvidican/libsearch'),
+};
 
 // Server, indexer and Electron main run on the Node inside Electron. Electron 17 ships Node 16,
 // but we target node12 syntax so the Electron 11/13 fallback builds still run the same code.

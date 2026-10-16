@@ -18,6 +18,7 @@ Status: v0.1 being implemented; the UI is refined iteratively on the running app
 | kiwix-serve | The server checks `127.0.0.1:8080`; if not running and binary + ZIMs exist it starts it, and stops it on exit only if it started it. | Single place for the lifecycle; works in Electron and Firefox modes. |
 | Release asset | `library-search-linux-ia32-vX.Y.Z.tar.gz` (not zip) | `tar` is always on Ubuntu and keeps exec bits; `unzip` may be missing. |
 | Repo | Repo root = `library-search-app/` (owner choice). Kit-root launchers live in `kit/` and are copied to the kit root by the install script. | |
+| Updates | The app updates itself from the GitHub releases of the (public) repo: on by default, switch on Library → Updates. Only the **server** process goes online, only to GitHub; the window stays zero-network. Download → sha256 check → installed by `6-install-or-update-search-app.sh` when the app closes, or at once on "Restart now". | Owner request (2026-10-16), reversing HANDOFF's "no update checks". Offline nothing happens. Reusing the install script keeps one tested swap path (keep `.old` until the new version is in). |
 
 ## Layout
 
@@ -60,8 +61,8 @@ Packaged app: `dist/library-search-linux-ia32/library-search` (Electron); app fi
 
 | Entry | Run as | Flags |
 | --- | --- | --- |
-| `build/main/main.js` | `library-search [flags]` (Electron) | `--library-root <dir>` (repeatable), `--data-dir <dir>`, `--kiwix-port 8080`, `--kiwix-serve <path>`, `--self-test` (load UI, check `/api/status`, print JSON report, exit 0/1), Chromium flags like `--disable-gpu`, `--no-sandbox` |
-| `build/server/server.js` | `ELECTRON_RUN_AS_NODE=1 library-search resources/app/build/server/server.js [flags]` (or `node` on the Mac) | same root/data/kiwix flags, `--port <n>` (default 0 = random in Electron mode, 8090 in browser mode), `--mode electron\|browser`, `--open-browser`, `--no-kiwix-autostart`. Ready: `process.send({type:'ready', url, port, token})` when forked, and prints `LIBRARY_SEARCH_READY <url>` on stdout. |
+| `build/main/main.js` | `library-search [flags]` (Electron) | `--library-root <dir>` (repeatable), `--data-dir <dir>`, `--kiwix-port 8080`, `--kiwix-serve <path>`, `--no-update`, `--self-test` (implies `--no-update`) (load UI, check `/api/status`, print JSON report, exit 0/1), Chromium flags like `--disable-gpu`, `--no-sandbox` |
+| `build/server/server.js` | `ELECTRON_RUN_AS_NODE=1 library-search resources/app/build/server/server.js [flags]` (or `node` on the Mac) | same root/data/kiwix flags, `--port <n>` (default 0 = random in Electron mode, 8090 in browser mode), `--mode electron\|browser`, `--open-browser`, `--no-kiwix-autostart`, `--no-update` (or `LIBRARY_SEARCH_NO_UPDATE=1`). Ready: `process.send({type:'ready', url, port, token})` when forked, and prints `LIBRARY_SEARCH_READY <url>` on stdout. |
 | `build/indexer/indexer.js` | same as server | root/data flags, `--full` (re-index everything), `--json` (JSON-lines progress on stdout: `{"type":"progress",…BuildProgress}`), exit 0 ok / 1 failed / 3 cancelled (SIGTERM) |
 
 ## Index schema (SQLite FTS5)
@@ -107,6 +108,9 @@ All `/api/*` calls carry header `X-Token` (token is injected into index.html as 
 | GET | `/api/index/problems` | `DocSummary[]` (scanned + errors) |
 | POST | `/api/index/build` / `/api/index/cancel` | `IndexStatus` |
 | POST | `/api/open` `{docId, page?, q?}` | `OpenResult` (`how: evince|xdg-open|open|reader`, `readerUrl?`) |
+| GET | `/api/update` (also `Status.update`) | `UpdateStatus` |
+| POST | `/api/update/check` / `/api/update/download` | `UpdateStatus` (check waits for GitHub; a download runs in the background) |
+| POST | `/api/update/install` | `UpdateStatus` `installing`, then the app closes ("Restart now") |
 | GET | `/epub/<docId>/<path in zip>` | file from inside an EPUB |
 | GET | `/content/…`, `/skin/…`, `/catalog/…`, `/search…`, `/random…`, `/raw/…`, `/catch/…`, `/viewer…` | proxied to kiwix-serve |
 
@@ -117,12 +121,36 @@ Guidelines: WCAG 2.2 AA (text contrast ≥ 4.5:1, visible focus ring, targets �
 Screens (hash routes): `#/` home (big search, example chips, category tiles) · `#/search?q=&f=` results (filter chips: All · Books · Wikipedia & reference · Khan Academy · Q&A; category select for books) · `#/read?u=` reader (toolbar: Back to results, ‹ ›, Find, Open in Firefox) · `#/browse[/<category>]` · `#/library` (index status + build button + progress, problems list, Kiwix status/start, About).
 
 Themes: light (default for sunlight) and a dark-blue theme (navy `#071226` / `#0b1a33`, never black), both WCAG AA.
-Setting `system | light | dark` lives in `<data dir>/settings.json` (`GET/POST /api/settings`) because the app's port,
+Setting `system | light | dark` (and `autoUpdate`) lives in `<data dir>/settings.json` (`GET/POST /api/settings`) because the app's port,
 and so browser storage, changes every launch; the server stamps `data-theme` on `<html>` so the first paint is right.
 Header sun/moon button toggles; Library → Appearance offers "Same as computer". EPUB chapters follow the theme;
 Kiwix articles keep their own page styles.
 
 Keyboard: `/` focuses search, Enter searches, ↑/↓ move between results, Enter opens, Esc leaves the reader. Strings live in `src/ui/strings.ts` (Romanian later).
+
+## Updates
+
+`src/server/update.ts` (server process; never the window). Supported only in an installed Linux package
+(`<home>/dist/library-search-linux-<arch>/resources/app`, home writable, install script present); a dev checkout, macOS
+or `--no-update` shows the reason instead.
+
+1. Check: 30 s after start, then every 6 h while running (only with `autoUpdate`), or on "Check for updates":
+   `GET api.github.com/repos/<repo>/releases/latest`. Repo = package.json `repository` (baked in at build time),
+   `LIBRARY_SEARCH_REPO` overrides; `GITHUB_TOKEN` is used if set (never sent on to the storage host it redirects to).
+   Asset = `library-search-linux-<arch>-v<X.Y.Z><suffix>.tar.gz`; suffix `-e13` etc. comes from `releaseSuffix` in the
+   packaged `package.json` (fallback Electron builds stay on their kind). Offline = state `offline`, no alarm.
+2. Download into `<home>/dist/.update/` (`.part`, then rename), sha256 against the asset's GitHub `digest` or the
+   `.sha256` asset; `ready.json` records it, so a restart keeps it.
+3. Install: the server copies the install script to `.update/install.sh` and starts it detached
+   (`--wait --no-pin --status-file …`, plus `--relaunch[-firefox]` for "Restart now"), writing `installing.json`
+   `{from, to}` first. The script waits for every `<dest>/library-search` process to exit (2 min), swaps the folders
+   (old kept until the new is in place), and writes `ok <v>` / `busy` (app reopened: retried at the next close) /
+   `failed <reason>`. Output: `<data dir>/logs/update.log`.
+4. Next start: `installing.json` + the running version tell "updated from X" (toast + card) or the failure (shown,
+   not retried by itself until the user clicks Try again / Check for updates). `ELECTRON_RUN_AS_NODE` is removed
+   from the script's environment so the relaunched app starts as the app.
+
+Machines on 0.1.x install 0.2.0 once with the script; from then on the app updates itself.
 
 ## Verification
 

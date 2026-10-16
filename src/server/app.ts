@@ -12,6 +12,7 @@ import { openDocument, readEpubEntry } from './opener';
 import { FileStamp, IndexStats, indexStats, indexedFileStamps, listCategories, listDocs, listProblems, resolveDocFile, searchBooks } from './search';
 import { loadSettings, saveSettings } from './settings';
 import { hasCommand } from './tools';
+import { Updater, UpdaterOptions } from './update';
 import { findLibraryFiles, fingerprint } from '../indexer/walk';
 
 declare const __APP_VERSION__: string;
@@ -46,6 +47,9 @@ const UI_TYPES: Record<string, string> = {
 
 export class App {
   readonly kiwix: Kiwix;
+  readonly updater: Updater;
+  /** Set by server.ts: closes the app so the install script can replace it ("Restart now"). */
+  onQuitForUpdate: (() => void) | null = null;
   private db: DB | null = null;
   private indexer: ChildProcess | null = null;
   private build: BuildProgress = { ...IDLE_BUILD };
@@ -54,8 +58,9 @@ export class App {
   private pending: { at: number; value: number } | null = null;
   private port = 0;
 
-  constructor(readonly cfg: Config, readonly token: string) {
+  constructor(readonly cfg: Config, readonly token: string, opts: { updater?: UpdaterOptions } = {}) {
     this.kiwix = new Kiwix(cfg);
+    this.updater = new Updater(cfg, opts.updater);
   }
 
   setPort(port: number): void {
@@ -323,6 +328,7 @@ export class App {
       index,
       kiwix: await this.kiwix.status(),
       tools,
+      update: this.updater.status(),
       notices,
     };
   }
@@ -522,7 +528,24 @@ export class App {
         }
         const saved = saveSettings(this.cfg.dataDir, body);
         if (body.libraryRoots !== undefined) this.applyRoots(saved.libraryRoots);
+        if (typeof body.autoUpdate === 'boolean') this.updater.setAuto(saved.autoUpdate);
         return this.send(res, 200, saved);
+      }
+
+      case 'GET /api/update':
+        return this.send(res, 200, this.updater.status());
+
+      case 'POST /api/update/check':
+        return this.send(res, 200, await this.updater.check(true));
+
+      case 'POST /api/update/download':
+        return this.send(res, 200, this.updater.downloadNow());
+
+      case 'POST /api/update/install': {
+        const s = this.updater.installNow();
+        this.send(res, 200, s);
+        if (s.state === 'installing' && this.onQuitForUpdate) setTimeout(this.onQuitForUpdate, 300);
+        return;
       }
 
       case 'GET /api/browse':
@@ -581,6 +604,7 @@ export class App {
   }
 
   shutdown(): void {
+    this.updater.stop();
     if (this.indexer) {
       try {
         this.indexer.kill('SIGTERM');
