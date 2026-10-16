@@ -1,16 +1,14 @@
 import { useState } from 'react';
-import { useEffect } from 'react';
-import { CircleCheck, CircleAlert, Database, Download, Globe, Info, LoaderCircle, Monitor, Moon, Palette, Play, RefreshCw, RotateCw, Square, Sun, Wrench } from 'lucide-react';
-import type { ThemeSetting } from '../../shared/api';
+import { CircleCheck, CircleAlert, Database, Globe, Info, LoaderCircle, Play, RefreshCw, Square, Wrench } from 'lucide-react';
 import type { DocSummary, Status } from '../../shared/api';
-import { api, ApiError, MODE } from '../api';
+import { api } from '../api';
 import { useApp } from '../context';
-import { etaText, formatDate, kiwixFix, kiwixLabel, kiwixTone, megabytes, percent, updateHeadline, updateTone } from '../format';
+import { etaText, formatDate, kiwixFix, kiwixLabel, kiwixTone, percent } from '../format';
 import { useLoad } from '../hooks';
 import { formatNumber, S } from '../strings';
+import { CardHead } from './CardHead';
 import { NoticeBox } from './NoticeBox';
 import { LibraryFolders } from './LibraryFolders';
-import { onThemeChange, setTheme, themeSetting } from '../theme';
 
 export function Library() {
   const app = useApp();
@@ -33,28 +31,18 @@ export function Library() {
         <NoticeBox key={n.code} kind={n.kind} title={n.message} fix={n.fix} />
       ))}
       <LibraryFolders st={st} variant="card" />
-      <div className="lib-grid">
-        <IndexCard st={st} />
-        <div className="lib-col">
+      {/* Two columns of about equal height (one on narrow windows): the book index and its problem list,
+          then the encyclopedias and the helper programs. App settings are on the Settings page. */}
+      <div className="page-grid">
+        <div className="page-col">
+          <IndexCard st={st} />
+          <Problems st={st} />
+        </div>
+        <div className="page-col">
           <KiwixCard st={st} />
           <ToolsCard st={st} />
-          <UpdatesCard st={st} />
-          <AppearanceCard />
         </div>
       </div>
-      <Problems st={st} />
-      <About st={st} />
-    </div>
-  );
-}
-
-function CardHead({ icon, title, tone }: { icon: JSX.Element; title: string; tone?: 'ok' | 'busy' | 'warn' | 'bad' }) {
-  return (
-    <div className="card__head">
-      <span className={'card__icon' + (tone ? ' card__icon--' + tone : '')} aria-hidden="true">
-        {icon}
-      </span>
-      <h2 className="card__title">{title}</h2>
     </div>
   );
 }
@@ -222,150 +210,6 @@ function ToolsCard({ st }: { st: Status }) {
   );
 }
 
-function UpdatesCard({ st }: { st: Status }) {
-  const app = useApp();
-  const u = st.update;
-  const [busy, setBusy] = useState(false);
-  const [auto, setAuto] = useState(u.auto);
-  useEffect(() => setAuto(u.auto), [u.auto]);
-
-  const fail = (e: unknown) =>
-    app.toast(e instanceof ApiError ? { kind: 'error', message: e.notice.message, fix: e.notice.fix } : { kind: 'error', message: S.errors.generic });
-  const run = (call: () => Promise<unknown>) => {
-    setBusy(true);
-    call()
-      .catch(fail)
-      .then(() => {
-        setBusy(false);
-        app.refreshStatus();
-      });
-  };
-  const toggleAuto = (on: boolean) => {
-    setAuto(on);
-    api.saveSettings({ autoUpdate: on }).then(app.refreshStatus, () => {
-      setAuto(!on);
-      app.toast({ kind: 'error', message: S.updates.autoSaveFailed });
-    });
-  };
-
-  const tone = updateTone(u);
-  const unsupported = u.state === 'unsupported';
-  const pct = percent(u.received || 0, u.total || 0);
-  const v = u.downloaded || u.latest || '';
-
-  let text: string | null = null;
-  if (unsupported) text = u.reason || null;
-  else if (u.state === 'ready') text = u.auto ? S.updates.readyAuto : S.updates.readyManual;
-  else if (u.state === 'installing') text = MODE === 'browser' ? S.updates.restartBodyBrowser : S.updates.restartBody;
-  else if (u.state !== 'downloading') {
-    text = S.updates.version(u.current) + (u.checkedAt && u.state !== 'checking' ? ' ' + S.updates.lastChecked(formatDate(u.checkedAt)) : '');
-  }
-
-  let action: JSX.Element | null = null;
-  if (u.state === 'available') {
-    action = (
-      <button type="button" className="btn btn--primary" disabled={busy} onClick={() => run(api.updateDownload)}>
-        <Download size={18} aria-hidden="true" />
-        {S.updates.download}
-      </button>
-    );
-  } else if (u.state === 'ready' || (u.state === 'error' && u.downloaded)) {
-    action = (
-      <button type="button" className="btn btn--primary" onClick={app.installUpdate}>
-        <RotateCw size={18} aria-hidden="true" />
-        {u.state === 'ready' ? S.updates.restart : S.updates.retryInstall}
-      </button>
-    );
-  } else if (!unsupported && u.state !== 'downloading' && u.state !== 'installing') {
-    const checking = busy || u.state === 'checking';
-    action = (
-      <button type="button" className="btn btn--secondary" disabled={checking} onClick={() => run(api.updateCheck)}>
-        {checking ? <LoaderCircle className="spin" size={18} aria-hidden="true" /> : <RefreshCw size={18} aria-hidden="true" />}
-        {S.updates.check}
-      </button>
-    );
-  }
-
-  return (
-    <section className="card">
-      <CardHead icon={<Download size={22} />} title={S.updates.title} tone={tone} />
-      {u.updatedFrom ? (
-        <p className="card__ok card__ok--top">
-          <CircleCheck size={18} aria-hidden="true" />
-          {S.updates.updated(u.updatedFrom, u.current)}
-        </p>
-      ) : null}
-      <p className="kstate">
-        {tone ? <span className={'dot dot--' + tone} aria-hidden="true" /> : null}
-        <strong>{updateHeadline(u)}</strong>
-      </p>
-      {text ? <p className="card__text">{text}</p> : null}
-      {u.state === 'downloading' ? (
-        <div className="build" aria-live="polite">
-          <div className="build__row">
-            <span>{u.total ? S.updates.received(megabytes(u.received || 0), megabytes(u.total)) : ''}</span>
-            <span className="build__pct">{pct}%</span>
-          </div>
-          <div className="progress" role="progressbar" aria-label={updateHeadline(u)} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
-            <span className="progress__fill" style={{ width: pct + '%' }} />
-          </div>
-          <p className="build__eta">{S.updates.keepUsing}</p>
-        </div>
-      ) : null}
-      {u.error && (u.state === 'error' || u.state === 'offline') ? (
-        <NoticeBox kind={u.error.kind} compact title={u.error.message} fix={u.error.fix} />
-      ) : null}
-      {u.notes && v && (u.state === 'available' || u.state === 'downloading' || u.state === 'ready') ? (
-        <details className="notes">
-          <summary>{S.updates.whatsNew(v)}</summary>
-          <p className="notes__body">{u.notes}</p>
-        </details>
-      ) : null}
-      {action ? <div className="btn-row">{action}</div> : null}
-      {!unsupported ? (
-        <label className="toggle">
-          <input type="checkbox" className="toggle__input" checked={auto} onChange={(e) => toggleAuto(e.target.checked)} />
-          <span className="toggle__text">
-            <span className="toggle__label">{S.updates.autoLabel}</span>
-            <span className="toggle__hint">{S.updates.autoHint}</span>
-          </span>
-        </label>
-      ) : null}
-    </section>
-  );
-}
-
-function AppearanceCard() {
-  const [current, setCurrent] = useState<ThemeSetting>(themeSetting());
-  useEffect(() => onThemeChange(() => setCurrent(themeSetting())), []);
-  const options: Array<[ThemeSetting, string, JSX.Element]> = [
-    ['system', S.theme.system, <Monitor key="s" size={18} aria-hidden="true" />],
-    ['light', S.theme.light, <Sun key="l" size={18} aria-hidden="true" />],
-    ['dark', S.theme.dark, <Moon key="d" size={18} aria-hidden="true" />],
-  ];
-  return (
-    <section className="card">
-      <CardHead icon={<Palette size={22} />} title={S.theme.title} />
-      <p className="card__text">{S.theme.body}</p>
-      <div className="segmented" role="radiogroup" aria-label={S.theme.title}>
-        {options.map(([value, label, icon]) => (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={current === value}
-            className={'segmented__item' + (current === value ? ' is-selected' : '')}
-            onClick={() => setTheme(value)}
-          >
-            {icon}
-            <span>{label}</span>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function Problems({ st }: { st: Status }) {
   const app = useApp();
   const [open, setOpen] = useState(false);
@@ -407,31 +251,6 @@ function Problems({ st }: { st: Status }) {
           ) : null}
         </>
       )}
-    </section>
-  );
-}
-
-function About({ st }: { st: Status }) {
-  const rows: Array<[string, string]> = [
-    [S.library.version, st.version],
-    [S.library.mode, MODE === 'electron' || st.mode === 'electron' ? S.library.modeElectron : S.library.modeBrowser],
-  ];
-  if (st.electronVersion) rows.push([S.library.electron, st.electronVersion]);
-  rows.push([S.library.node, st.nodeVersion]);
-  rows.push([S.library.platform, st.platform + ' / ' + st.arch]);
-  rows.push([S.library.roots, st.roots.join('\n')]);
-  rows.push([S.library.dataDir, st.dataDir]);
-  return (
-    <section className="card">
-      <CardHead icon={<Info size={22} />} title={S.library.aboutTitle} />
-      <dl className="about">
-        {rows.map(([k, v]) => (
-          <div key={k} className="about__row">
-            <dt>{k}</dt>
-            <dd>{v}</dd>
-          </div>
-        ))}
-      </dl>
     </section>
   );
 }

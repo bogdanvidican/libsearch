@@ -12,6 +12,8 @@ import { Library } from './components/Library';
 import { NoticeBox } from './components/NoticeBox';
 import { Reader } from './components/Reader';
 import { Results } from './components/Results';
+import { Settings } from './components/Settings';
+import { Docs, findDoc } from './components/Docs';
 import { SEARCH_INPUT_ID } from './components/SearchBox';
 import { StatusBar } from './components/StatusBar';
 import { ToastItem, Toasts } from './components/Toast';
@@ -33,6 +35,10 @@ function titleFor(route: Route): string {
       return S.nav.browse + ' — ' + S.appName;
     case 'library':
       return S.nav.library + ' — ' + S.appName;
+    case 'settings':
+      return S.nav.settings + ' — ' + S.appName;
+    case 'docs':
+      return findDoc(route.section).title + ' — ' + S.docs.title + ' — ' + S.appName;
     default:
       return S.appName;
   }
@@ -195,6 +201,9 @@ export function App() {
   const libraryAlert =
     !!status && ((!status.index.exists && !status.index.build.running) || !status.tools.pdftotext || status.notices.some((n) => n.kind === 'error'));
 
+  const updateState = status && status.update ? status.update.state : '';
+  const settingsAlert = updateState === 'ready' || updateState === 'error';
+
   let screen: JSX.Element;
   switch (route.name) {
     case 'search':
@@ -209,6 +218,12 @@ export function App() {
     case 'library':
       screen = <Library />;
       break;
+    case 'settings':
+      screen = <Settings />;
+      break;
+    case 'docs':
+      screen = <Docs section={route.section} />;
+      break;
     default:
       screen = <Home onSearch={onSearch} />;
   }
@@ -219,7 +234,7 @@ export function App() {
         <a className="skip-link" href="#main" onClick={(e) => { e.preventDefault(); const m = document.getElementById('main'); if (m) m.focus(); }}>
           {S.skipToContent}
         </a>
-        <Header route={route} onSearch={onSearch} libraryAlert={libraryAlert} lastQuery={lastQuery.current} />
+        <Header route={route} onSearch={onSearch} libraryAlert={libraryAlert} settingsAlert={settingsAlert} lastQuery={lastQuery.current} />
         <main id="main" className={'main main--' + route.name} tabIndex={-1}>
           {statusError && status && !restarting ? (
             <div className="main__banner">

@@ -3,6 +3,7 @@ import { CircleAlert, Folder, FolderOpen, Plus, X } from 'lucide-react';
 import type { Notice, Status } from '../../shared/api';
 import { api, ApiError, native } from '../api';
 import { useApp } from '../context';
+import { navigate } from '../router';
 import { S } from '../strings';
 import { NoticeBox } from './NoticeBox';
 
@@ -123,6 +124,9 @@ export function LibraryFolders({ st, variant }: { st: Status; variant: 'card' | 
           {S.folders.useAuto}
         </button>
       ) : null}
+      <button type="button" className="link-btn folders__help" onClick={() => navigate({ name: 'docs', section: 'library' })}>
+        {S.folders.howTo}
+      </button>
     </>
   );
 

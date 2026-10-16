@@ -472,7 +472,7 @@ export class Updater {
     if (this.timer.unref) this.timer.unref();
   }
 
-  /** Automatic updates switched on or off on the Library page. */
+  /** Automatic updates switched on or off (Settings -> Updates). */
   setAuto(on: boolean): void {
     this.st.auto = on;
     if (this.st.state === 'unsupported') return;

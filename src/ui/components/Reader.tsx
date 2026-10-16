@@ -3,7 +3,7 @@ import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, ExternalL
 import { externalUrl, MODE, native } from '../api';
 import { useApp } from '../context';
 import { S } from '../strings';
-import { effectiveTheme, onThemeChange, READER_DARK_CSS } from '../theme';
+import { effectiveTheme, onThemeChange, readerDarkStyles } from '../theme';
 
 interface Props {
   url: string;
@@ -15,7 +15,7 @@ interface Props {
 export const READER_FRAME_ID = 'reader-frame';
 
 /**
- * EPUB chapters are styled by us, so they follow the app's dark-blue theme. Encyclopedia articles keep their
+ * EPUB chapters are styled by us, so they follow the app's dark colors. Encyclopedia articles keep their
  * own page styles (forcing dark colors onto arbitrary pages makes tables and diagrams unreadable).
  */
 function applyFrameTheme(f: HTMLIFrameElement | null): void {
@@ -28,9 +28,9 @@ function applyFrameTheme(f: HTMLIFrameElement | null): void {
       if (!st) {
         st = d.createElement('style');
         st.id = 'ls-reader-dark';
-        st.textContent = READER_DARK_CSS;
         d.head.appendChild(st);
       }
+      st.textContent = readerDarkStyles(); // also when the dark colors change while reading
     } else if (st && st.parentNode) {
       st.parentNode.removeChild(st);
     }

@@ -1,4 +1,5 @@
-/* Library Search — high-contrast light theme for bright light, plus a dark-blue (navy, not black) theme.
+/* Library Search — high-contrast light theme for bright light, plus a dark theme whose colors (tint + darkness)
+   are chosen on Settings -> Appearance; its tokens come from src/shared/darkPalette.ts, not this file.
    Dark mode: <html data-theme="dark">, or the OS preference when no theme is chosen (data-theme absent).
    WCAG 2.2 AA: body text >= 7:1, muted text >= 4.5:1, focus ring always visible, targets >= 44px.
    Avoid CSS newer than Firefox 60 / Chrome 87 (no :is/:where, nesting, aspect-ratio). Flex `gap`
@@ -74,132 +75,9 @@
   --mono: 'Ubuntu Mono', 'DejaVu Sans Mono', Menlo, Consolas, monospace;
 }
 
-/* Dark theme: deep navy surfaces instead of black. Contrast (WCAG AA) on --surface #0b1a33:
-   text 14.7:1, muted 7.9:1, accent/links 6.9:1; button text (--on-accent) on --accent 7.2:1. */
-:root[data-theme='dark'] {
-  --bg: #071226;
-  --surface: #0b1a33;
-  --surface-2: #09162d;
-  --surface-3: #11254a;
-  --border: #1b3560;
-  --border-strong: #2e4d7f;
-  --text: #e6edf8;
-  --text-2: #c2d0e6;
-  --muted: #9db0cd;
-  --accent: #6ea3ff;
-  --accent-hover: #8ab5ff;
-  --accent-press: #a6c6ff;
-  --accent-soft: #122a52;
-  --accent-soft-2: #183563;
-  --focus: #8ab5ff;
-  --ok: #4ade80;
-  --ok-soft: #0f3326;
-  --warn: #fbbf24;
-  --warn-soft: #3a2a0c;
-  --bad: #f87171;
-  --bad-soft: #3d1620;
-  --mark: #fde68a;
-
-  --g-books: #f0a64b;
-  --g-books-soft: #3a2710;
-  --g-reference: #7aa7ff;
-  --g-reference-soft: #122a52;
-  --g-khan: #4ade80;
-  --g-khan-soft: #0f3326;
-  --g-qa: #b794ff;
-  --g-qa-soft: #2a1f55;
-
-  --mark-text: #0f172a;
-  --on-accent: #08162b;
-  --inverse: #e6edf8;
-  --on-inverse: #071226;
-  --inverse-soft: rgba(7, 18, 38, 0.14);
-  --placeholder: #8295b3;
-  --focus-glow: rgba(110, 163, 255, 0.28);
-  --setup-top: #0f2244;
-  --ok-border: #1f6b45;
-  --warn-border: #7a5a14;
-  --warn-text: #fcd34d;
-  --bad-border: #7f2a35;
-  --filters-bg: rgba(7, 18, 38, 0.96);
-  --hover-border: #3f629a;
-  --g-books-text: #f6c27e;
-  --skeleton: #172d4e;
-  --frame-bg: #ffffff;
-  --track: #183563;
-  --code-bg: #040c1e;
-  --code-text: #e6edf8;
-  --dot-warn: #fbbf24;
-  --toast-bg: #18325e;
-  --toast-text: #f8fafc;
-  --toast-shadow: rgba(0, 0, 0, 0.5);
-  --shadow-1: 0 1px 2px rgba(2, 8, 23, 0.4), 0 1px 1px rgba(2, 8, 23, 0.3);
-  --shadow-2: 0 6px 18px rgba(2, 8, 23, 0.5), 0 1px 3px rgba(2, 8, 23, 0.4);
-  color-scheme: dark;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --bg: #071226;
-    --surface: #0b1a33;
-    --surface-2: #09162d;
-    --surface-3: #11254a;
-    --border: #1b3560;
-    --border-strong: #2e4d7f;
-    --text: #e6edf8;
-    --text-2: #c2d0e6;
-    --muted: #9db0cd;
-    --accent: #6ea3ff;
-    --accent-hover: #8ab5ff;
-    --accent-press: #a6c6ff;
-    --accent-soft: #122a52;
-    --accent-soft-2: #183563;
-    --focus: #8ab5ff;
-    --ok: #4ade80;
-    --ok-soft: #0f3326;
-    --warn: #fbbf24;
-    --warn-soft: #3a2a0c;
-    --bad: #f87171;
-    --bad-soft: #3d1620;
-    --mark: #fde68a;
-
-    --g-books: #f0a64b;
-    --g-books-soft: #3a2710;
-    --g-reference: #7aa7ff;
-    --g-reference-soft: #122a52;
-    --g-khan: #4ade80;
-    --g-khan-soft: #0f3326;
-    --g-qa: #b794ff;
-    --g-qa-soft: #2a1f55;
-
-    --mark-text: #0f172a;
-    --on-accent: #08162b;
-    --inverse: #e6edf8;
-    --on-inverse: #071226;
-    --inverse-soft: rgba(7, 18, 38, 0.14);
-    --placeholder: #8295b3;
-    --focus-glow: rgba(110, 163, 255, 0.28);
-    --setup-top: #0f2244;
-    --ok-border: #1f6b45;
-    --warn-border: #7a5a14;
-    --warn-text: #fcd34d;
-    --bad-border: #7f2a35;
-    --filters-bg: rgba(7, 18, 38, 0.96);
-    --hover-border: #3f629a;
-    --g-books-text: #f6c27e;
-    --skeleton: #172d4e;
-    --frame-bg: #ffffff;
-    --track: #183563;
-    --code-bg: #040c1e;
-    --code-text: #e6edf8;
-    --dot-warn: #fbbf24;
-    --toast-bg: #18325e;
-    --toast-text: #f8fafc;
-    --toast-shadow: rgba(0, 0, 0, 0.5);
-    --shadow-1: 0 1px 2px rgba(2, 8, 23, 0.4), 0 1px 1px rgba(2, 8, 23, 0.3);
-    --shadow-2: 0 6px 18px rgba(2, 8, 23, 0.5), 0 1px 3px rgba(2, 8, 23, 0.4);
-    color-scheme: dark;
-  }
-}
+/* Dark theme: the tokens come from src/shared/darkPalette.ts (a tint and a darkness level, chosen under
+   Library -> Appearance; tests/shared/darkPalette.test.ts checks their contrast). The server stamps them into
+   index.html as <style id="ls-dark"> after this file, and the UI rewrites that element when they change. */
 
 *,
 *::before,
@@ -407,13 +285,6 @@ a {
   background: var(--accent-soft);
   color: var(--accent);
 }
-.topnav__item--icon {
-  width: 44px;
-  padding: 0;
-  justify-content: center;
-  margin-left: 4px;
-  border: 1px solid var(--border);
-}
 .topnav__dot {
   position: absolute;
   top: 8px;
@@ -441,16 +312,11 @@ a {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--focus-glow);
 }
-.searchbox__icon {
-  flex: 0 0 auto;
-  margin-left: 14px;
-  color: var(--muted);
-}
 .searchbox__input {
   flex: 1 1 auto;
   min-width: 0;
   height: 44px;
-  padding: 0 10px;
+  padding: 0 10px 0 14px;
   border: 0;
   background: transparent;
   font-size: 17px;
@@ -490,18 +356,22 @@ a {
   min-height: 40px;
   border-radius: 9px;
 }
+/* Header bar: the magnifier is the whole button (.searchbox prefix: must beat .btn's padding, defined later). */
+.searchbox .searchbox__submit--icon {
+  flex: 0 0 auto;
+  width: 44px;
+  padding: 0;
+  justify-content: center;
+}
 
 .searchbox--hero {
   border-radius: 16px;
   box-shadow: var(--shadow-2);
 }
-.searchbox--hero .searchbox__icon {
-  margin-left: 18px;
-}
 .searchbox--hero .searchbox__input {
   height: 60px;
   font-size: 20px;
-  padding: 0 12px;
+  padding: 0 12px 0 20px;
 }
 .searchbox--hero .searchbox__clear {
   width: 52px;
@@ -973,7 +843,7 @@ a {
   outline-offset: 1px;
 }
 
-/* Option list (Appearance: Same as computer / Light / Dark blue), one full-width row per choice */
+/* Option list (Appearance: Same as computer / Light / Dark), one full-width row per choice */
 .segmented {
   display: flex;
   flex-direction: column;
@@ -1759,21 +1629,21 @@ mark {
 }
 
 /* Library */
-.lib-grid {
+.page-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
-.lib-grid > .card,
-.lib-col > .card {
+.page-grid > .card,
+.page-col > .card {
   margin-bottom: 0;
 }
-.lib-col {
+.page-col {
   display: grid;
   gap: 16px;
 }
-.lib-grid + .card {
+.page-grid + .card {
   margin-top: 16px;
 }
 .stats {
@@ -2069,6 +1939,414 @@ mark {
   color: var(--muted);
 }
 
+/* Appearance card (Settings): dark mode colors */
+.card__subtitle {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.field-label {
+  display: block;
+  margin: 14px 0 8px;
+  font-weight: 600;
+  color: var(--text);
+}
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 6px;
+}
+.swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 2px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.swatch:hover {
+  background: var(--surface-3);
+}
+.swatch__chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid;
+}
+.swatch__dot {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.swatch.is-selected {
+  color: var(--accent);
+}
+.swatch.is-selected .swatch__chip {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 5px var(--accent);
+}
+.range {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+.range__end {
+  flex: 0 0 auto;
+  font-size: 15px;
+  color: var(--muted);
+}
+.range__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 44px; /* touch target */
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+/* Always dark: its tokens are set inline from the chosen palette. */
+.dark-preview {
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+.dark-preview__card {
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.dark-preview__tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--g-books-soft);
+  color: var(--g-books-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+.dark-preview__title {
+  margin: 6px 0 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.dark-preview__meta {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.dark-preview__text {
+  margin: 6px 0 0;
+  color: var(--text-2);
+}
+.dark-preview__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+.dark-preview__btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+.dark-preview__link {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Folder chooser: link to the guide */
+.folders__help {
+  display: flex;
+  margin-top: 6px;
+}
+
+/* Settings: Help card */
+.help-links {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+.help-links__item {
+  padding-left: 0;
+}
+
+/* ---------- Guide (Settings -> Guide) ---------- */
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: -8px 0 4px;
+  font-size: 15px;
+  color: var(--muted);
+}
+.crumbs .link-btn {
+  padding-left: 0;
+}
+.docs {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.docs__toc {
+  position: sticky;
+  top: 8px;
+}
+.docs__toc ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.docs__toc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.docs__toc-item svg {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+.docs__toc-item:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.docs__toc-item.is-current {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.docs__toc-item.is-current svg {
+  color: var(--accent);
+}
+.docs__body {
+  margin-bottom: 0;
+  padding: 24px 28px;
+}
+.docs__title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+}
+.docs__title:focus {
+  outline: none;
+}
+.docs__summary {
+  margin: 4px 0 6px;
+  color: var(--muted);
+}
+.docs__h {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 24px 0 4px;
+}
+.docs__p {
+  margin: 10px 0;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+.docs__list,
+.docs__steps {
+  margin: 8px 0;
+  padding-left: 24px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+.docs__list li + li,
+.docs__steps li + li {
+  margin-top: 6px;
+}
+.docs__steps li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+.docs__body strong {
+  color: var(--text);
+}
+.docs__code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.92em;
+  word-break: break-word;
+}
+.docs__tree {
+  margin: 10px 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.docs__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 12px 14px;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+}
+.docs__note p {
+  margin: 0;
+  line-height: 1.55;
+}
+.docs__note-icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.docs__note--tip {
+  background: var(--accent-soft);
+  border-color: var(--accent-soft-2);
+}
+.docs__note--tip .docs__note-icon {
+  color: var(--accent);
+}
+.docs__note--warning {
+  background: var(--warn-soft);
+  border-color: var(--warn-border);
+}
+.docs__note--warning .docs__note-icon {
+  color: var(--warn);
+}
+.docs__links {
+  margin-top: 16px;
+}
+.docs__qa {
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.docs__qa summary {
+  padding: 12px 14px; /* 44px target */
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+.docs__qa[open] summary {
+  border-bottom: 1px solid var(--border);
+}
+.docs__qa-a {
+  padding: 0 14px;
+}
+.docs__live {
+  margin: 10px 0;
+  padding: 4px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.cmd {
+  margin: 12px 0;
+}
+.cmd__label {
+  margin: 0 0 6px;
+  color: var(--text-2);
+}
+.cmd__box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--code-bg);
+  color: var(--code-text);
+}
+.cmd__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 0;
+  font-family: var(--mono);
+  font-size: 15px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.cmd__copy {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--code-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+.cmd__copy:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.cmd__failed {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: var(--warn-text);
+}
+.docs__pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.docs__pager-btn {
+  max-width: 48%;
+  min-height: 56px;
+  white-space: normal;
+  text-align: left;
+}
+.docs__pager-btn--next {
+  margin-left: auto;
+  text-align: right;
+}
+.docs__pager-dir {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 /* "Installing the update…" while the app closes */
 .restart {
   position: fixed;
@@ -2134,6 +2412,16 @@ mark {
   color: inherit;
   text-align: left;
   min-width: 0;
+}
+/* "Update ready": its own button, it opens Settings (the main one opens Library) */
+.statusbar__button--update {
+  flex: 0 0 auto;
+  width: auto;
+  gap: 8px;
+  border-left: 1px solid var(--border);
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
 }
 .statusbar__button:hover {
   background: var(--surface-2);
@@ -2293,10 +2581,15 @@ mark {
 
 /* ---------- Small screens (800x600 and narrower) ---------- */
 
-@media (max-width: 940px) {
+/* 1024 px (the CF-30): four labelled nav buttons + the search box need the room the app name takes.
+   The logo stays (it is the Home link) and the name is in the window title. */
+@media (max-width: 1100px) {
   .brand__text {
     display: none;
   }
+}
+
+@media (max-width: 940px) {
   .topnav__label {
     display: none;
   }
@@ -2306,7 +2599,7 @@ mark {
   .topnav__dot {
     left: 26px;
   }
-  .lib-grid {
+  .page-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -2314,6 +2607,24 @@ mark {
 @media (max-width: 760px) {
   .hide-sm {
     display: none;
+  }
+  /* Guide: the table of contents becomes a row of buttons above the text */
+  .docs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .docs__toc {
+    position: static;
+  }
+  .docs__toc ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .docs__toc-item {
+    width: auto;
+  }
+  .docs__body {
+    padding: 18px 16px;
   }
   .home,
   .page,
@@ -2337,12 +2648,6 @@ mark {
   }
   .statusbar__more {
     display: none;
-  }
-  .searchbox__submit {
-    display: none;
-  }
-  .searchbox--hero .searchbox__submit {
-    display: inline-flex;
   }
 }
 

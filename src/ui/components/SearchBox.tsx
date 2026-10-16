@@ -38,7 +38,6 @@ export function SearchBox({ value, onSearch, variant, autoFocus }: Props) {
       <label htmlFor={SEARCH_INPUT_ID} className="visually-hidden">
         {S.search.label}
       </label>
-      <Search className="searchbox__icon" aria-hidden="true" size={variant === 'hero' ? 24 : 20} />
       <input
         id={SEARCH_INPUT_ID}
         ref={input}
@@ -67,9 +66,17 @@ export function SearchBox({ value, onSearch, variant, autoFocus }: Props) {
           <X size={20} aria-hidden="true" />
         </button>
       ) : null}
-      <button type="submit" className="btn btn--primary searchbox__submit">
-        {S.search.submit}
-      </button>
+      {/* The magnifier is only on the button. On Home the big button also says "Search". */}
+      {variant === 'hero' ? (
+        <button type="submit" className="btn btn--primary searchbox__submit">
+          <Search size={22} strokeWidth={2.5} aria-hidden="true" />
+          {S.search.submit}
+        </button>
+      ) : (
+        <button type="submit" className="btn btn--primary searchbox__submit searchbox__submit--icon" aria-label={S.search.submit} title={S.search.submit}>
+          <Search size={20} strokeWidth={2.5} aria-hidden="true" />
+        </button>
+      )}
     </form>
   );
 }

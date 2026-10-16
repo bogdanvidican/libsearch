@@ -38,6 +38,7 @@ _(paste m0-report-<date>.txt here)_
 | SQLite FTS5 in WASM (node-sqlite3-wasm, SQLite 3.53.4) | PASS — porter stemming, `snippet()`, `bm25()` |
 | Server on ia32 against an index built on the Mac (fixture library) | PASS — `LIBRARY_SEARCH_READY`, token in `index.html`, `/api/status` (8 docs, 13 pages), `/api/search?q=water` hits in ~1 s under emulation. So an index built on the Mac works on the ia32 build. |
 | Installer on 16.04 userland | PASS — GNU tar 1.28 unpacks the macOS-made ustar tarball without warnings; exec bits kept; paths with spaces and `&`; sha256 check; launchers copied to the kit root; `old -> new` printed |
+| In-app update install step (0.2.0, 2026-10-16; also on CI, native i386) | PASS — `--wait --status-file`: with the app open it waits, then reports `busy` and leaves it alone; closed, it installs and reports `ok 0.2.0` (container check (f)) |
 | Launcher logic | PASS — quick failure → retry with `--no-sandbox` → "could not start, open in Firefox?" message; `--firefox` starts the server (READY) |
 | ia32 indexer | not testable under QEMU: any `child_process.spawn` from Electron's Node segfaults in QEMU user-mode (pdftotext can't be started). Same crash for any QEMU CPU model (`QEMU_CPU=coreduo`, `core2duo`, `n270`, `max`). |
 | GUI `--self-test` under Xvfb | not testable under QEMU: Chromium can't launch its GPU/renderer child processes (`GPU process isn't usable. Goodbye.`); `--single-process` aborts in Electron's Node platform. |

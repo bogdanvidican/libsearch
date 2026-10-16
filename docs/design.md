@@ -18,13 +18,13 @@ Status: v0.1 being implemented; the UI is refined iteratively on the running app
 | kiwix-serve | The server checks `127.0.0.1:8080`; if not running and binary + ZIMs exist it starts it, and stops it on exit only if it started it. | Single place for the lifecycle; works in Electron and Firefox modes. |
 | Release asset | `library-search-linux-ia32-vX.Y.Z.tar.gz` (not zip) | `tar` is always on Ubuntu and keeps exec bits; `unzip` may be missing. |
 | Repo | Repo root = `library-search-app/` (owner choice). Kit-root launchers live in `kit/` and are copied to the kit root by the install script. | |
-| Updates | The app updates itself from the GitHub releases of the (public) repo: on by default, switch on Library → Updates. Only the **server** process goes online, only to GitHub; the window stays zero-network. Download → sha256 check → installed by `6-install-or-update-search-app.sh` when the app closes, or at once on "Restart now". | Owner request (2026-10-16), reversing HANDOFF's "no update checks". Offline nothing happens. Reusing the install script keeps one tested swap path (keep `.old` until the new version is in). |
+| Updates | The app updates itself from the GitHub releases of the (public) repo: on by default, switch on Settings → Updates. Only the **server** process goes online, only to GitHub; the window stays zero-network. Download → sha256 check → installed by `6-install-or-update-search-app.sh` when the app closes, or at once on "Restart now". | Owner request (2026-10-16), reversing HANDOFF's "no update checks". Offline nothing happens. Reusing the install script keeps one tested swap path (keep `.old` until the new version is in). |
 
 ## Layout
 
 ```
 library-search-app/
-  src/shared/        API types shared by server + UI (api.ts)
+  src/shared/        shared by server, Electron main + UI: API types (api.ts), dark-mode palette (darkPalette.ts)
   src/server/        HTTP server, search, kiwix, opener, config, db
   src/indexer/       walk + pdftotext/pdfinfo + EPUB reader + writer
   src/main/          Electron main + preload
@@ -108,6 +108,7 @@ All `/api/*` calls carry header `X-Token` (token is injected into index.html as 
 | GET | `/api/index/problems` | `DocSummary[]` (scanned + errors) |
 | POST | `/api/index/build` / `/api/index/cancel` | `IndexStatus` |
 | POST | `/api/open` `{docId, page?, q?}` | `OpenResult` (`how: evince|xdg-open|open|reader`, `readerUrl?`) |
+| GET / POST | `/api/settings` (POST takes any subset) | `Settings` (`theme`, `libraryRoots`, `autoUpdate`, `darkTint`, `darkLevel`); bad values are ignored or clamped |
 | GET | `/api/update` (also `Status.update`) | `UpdateStatus` |
 | POST | `/api/update/check` / `/api/update/download` | `UpdateStatus` (check waits for GitHub; a download runs in the background) |
 | POST | `/api/update/install` | `UpdateStatus` `installing`, then the app closes ("Restart now") |
@@ -118,13 +119,26 @@ All `/api/*` calls carry header `X-Token` (token is injected into index.html as 
 
 Guidelines: WCAG 2.2 AA (text contrast ≥ 4.5:1, visible focus ring, targets ≥ 44 px, `prefers-reduced-motion`), Nielsen heuristics (system status always visible, plain-language errors with the fix, undo/back everywhere), semantic landmarks + ARIA live region for result counts. Base font 16 px; result titles 18 px.
 
-Screens (hash routes): `#/` home (big search, example chips, category tiles) · `#/search?q=&f=` results (filter chips: All · Books · Wikipedia & reference · Khan Academy · Q&A; category select for books) · `#/read?u=` reader (toolbar: Back to results, ‹ ›, Find, Open in Firefox) · `#/browse[/<category>]` · `#/library` (index status + build button + progress, problems list, Kiwix status/start, About).
+Screens (hash routes): `#/` home (big search, example chips, category tiles) · `#/search?q=&f=` results (filter chips: All · Books · Wikipedia & reference · Khan Academy · Q&A; category select for books) · `#/read?u=` reader (toolbar: Back to results, ‹ ›, Find, Open in Firefox) · `#/browse[/<category>]` · `#/library` (library folders, then two columns of about equal height: book index + "books that can't be searched" | Kiwix status/start + helper programs) · `#/settings` (app settings, not about the library: Appearance with the dark colors, Help, Updates, About) · `#/docs[/<section>]` the guide, opened from Settings → Help (and "How should the library folder look?" in the folder chooser): table of contents + one section at a time with Previous/Next; sections Getting started, Searching, Opening books and articles, Setting up your library folder, The book index, Encyclopedias, Helper programs, Appearance and updates, When something goes wrong, Where things are kept. Content is data in `src/ui/docs.ts` (`**bold**` = a button/page name, `` `code` `` = a command), offline like everything else; two blocks are live (installed helper programs, this computer's folders) and commands have a Copy button. `tests/ui/docs.test.tsx` checks every quoted button name still matches `strings.ts`, links resolve, and each section renders.
 
-Themes: light (default for sunlight) and a dark-blue theme (navy `#071226` / `#0b1a33`, never black), both WCAG AA.
-Setting `system | light | dark` (and `autoUpdate`) lives in `<data dir>/settings.json` (`GET/POST /api/settings`) because the app's port,
-and so browser storage, changes every launch; the server stamps `data-theme` on `<html>` so the first paint is right.
-Header sun/moon button toggles; Library → Appearance offers "Same as computer". EPUB chapters follow the theme;
-Kiwix articles keep their own page styles.
+Header: logo (= Home) · search bar (the magnifier is only the Search button, on the right; no icon inside the field)
+· Home · Browse · Library · Settings (dot on Library for problems, on Settings when an update is ready or failed). No
+theme button: light/dark is chosen on Settings → Appearance. Up to 1100 px wide (the CF-30's 1024) the app name next to
+the logo is hidden so the search bar stays long; below 940 px the nav shows icons only. On Home the header has no search
+bar: the big box's button shows the magnifier and the word "Search". Status bar: one button for books + encyclopedias
+(opens Library) and, when an update is downloaded, a second "Update ready" button (opens Settings).
+
+Themes: light (default for sunlight) and dark. The dark colors are chosen on Settings → Appearance: a tint (Navy, Slate,
+Charcoal, Warm, Forest, Plum) and a darkness level 1-5 (Softer … Darker; 5 is near black). Default Navy 3 = the original
+navy (`#071226` / `#0b1a33`). All dark tokens come from `src/shared/darkPalette.ts` (HSL ramp per tint; text, accent and
+status colors are lightened until they meet their contrast target), and `tests/shared/darkPalette.test.ts` checks WCAG
+contrast for every tint × level (body text 7:1, muted/links/buttons 4.5:1, focus ring 3:1). styles.css holds only the
+light tokens; the server stamps `<style id="ls-dark">` (after app.css) and `<meta name="ls-dark" content="tint:level">`
+into index.html, and the UI rewrites that element live (saving is debounced). The Electron start page and EPUB chapters use
+the same palette. Settings `theme` (`system | light | dark`), `darkTint`, `darkLevel` and `autoUpdate` live in
+`<data dir>/settings.json` (`GET/POST /api/settings`) because the app's port, and so browser storage, changes every launch;
+the server stamps `data-theme` on `<html>` so the first paint is right. Settings → Appearance offers Same as computer /
+Light / Dark (there is no header toggle any more). Kiwix articles keep their own page styles.
 
 Keyboard: `/` focuses search, Enter searches, ↑/↓ move between results, Enter opens, Esc leaves the reader. Strings live in `src/ui/strings.ts` (Romanian later).
 
@@ -154,6 +168,8 @@ Machines on 0.1.x install 0.2.0 once with the script; from then on the app updat
 
 ## Verification
 
-- Unit/integration: vitest on the Mac (query parser, zip/EPUB reader, kiwix XML parsing, indexer on fixtures, search ranking).
+- Unit/integration: vitest on the Mac (query parser, zip/EPUB reader, kiwix XML parsing, indexer on fixtures, search ranking,
+  updates against a fake GitHub with the real install script, WCAG contrast of every dark tint × level, the guide's
+  button names against the real UI labels).
 - `scripts/docker-ia32-test.sh`: packaged linux-ia32 build inside `i386/ubuntu:xenial` → `ldd` missing libs, max GLIBC symbol ≤ 2.23, server + indexer smoke test on fixtures via `ELECTRON_RUN_AS_NODE`, best-effort Electron launch under Xvfb (`--self-test`).
 - `scripts/m0-check.sh` on the real CF-30 → report pasted into `NOTES.md`.

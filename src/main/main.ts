@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { boolFlag, parseArgs, resolveConfig } from '../server/config';
 import { loadSettings } from '../server/settings';
+import { darkPalette } from '../shared/darkPalette';
 
 declare const __APP_VERSION__: string;
 
@@ -53,9 +54,16 @@ function isDark(): boolean {
   return t === 'dark' || (t === 'system' && nativeTheme.shouldUseDarkColors);
 }
 
+/** The dark colors chosen on the Settings page. */
+function dark(): Record<string, string> {
+  const s = loadSettings(cfg.dataDir);
+  return darkPalette(s.darkTint, s.darkLevel);
+}
+
 function page(title: string, body: string): string {
-  const c = isDark()
-    ? { bg: '#071226', card: '#0b1a33', border: '#1b3560', text: '#e6edf8', text2: '#c2d0e6', code: '#11254a', track: '#1b3560', accent: '#6ea3ff' }
+  const d = isDark() ? dark() : null;
+  const c = d
+    ? { bg: d.bg, card: d.surface, border: d.border, text: d.text, text2: d['text-2'], code: d['surface-3'], track: d.border, accent: d.accent }
     : { bg: '#f3f5f8', card: '#fff', border: '#d9dee5', text: '#0f172a', text2: '#334155', code: '#eef2f6', track: '#cbd5e1', accent: '#1d4ed8' };
   const html =
     '<!doctype html><html><head><meta charset="utf-8"><title>Library Search</title><style>' +
@@ -139,7 +147,7 @@ function createWindow(): void {
     minWidth: 760,
     minHeight: 540,
     show: false,
-    backgroundColor: isDark() ? '#071226' : '#f3f5f8',
+    backgroundColor: isDark() ? dark().bg : '#f3f5f8',
     title: 'Library Search',
     // Window/taskbar icon on Linux (the sidebar icon itself comes from the installed .desktop file).
     icon: fs.existsSync(path.join(APP_DIR, 'assets', 'icons', '256.png')) ? path.join(APP_DIR, 'assets', 'icons', '256.png') : undefined,

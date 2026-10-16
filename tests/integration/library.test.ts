@@ -11,6 +11,7 @@ import { resolveConfig } from '../../src/server/config';
 import { openDb } from '../../src/server/db';
 import { listCategories, listProblems, searchBooks } from '../../src/server/search';
 import { HL_END, HL_START } from '../../src/shared/api';
+import { darkPalette } from '../../src/shared/darkPalette';
 
 const APP_DIR = path.join(__dirname, '..', '..');
 const FIXTURES = path.join(APP_DIR, 'tests', 'fixtures', 'library');
@@ -249,14 +250,23 @@ describe('HTTP API', () => {
         req.on('error', reject);
         req.end(body);
       });
-    expect(JSON.parse((await get('/api/settings')).body)).toEqual({ theme: 'system', libraryRoots: [], autoUpdate: true });
+    expect(JSON.parse((await get('/api/settings')).body)).toEqual({ theme: 'system', libraryRoots: [], autoUpdate: true, darkTint: 'navy', darkLevel: 3 });
     expect((await get('/')).body).not.toContain('<html data-theme');
-    expect(JSON.parse(await post('{"theme":"dark"}'))).toEqual({ theme: 'dark', libraryRoots: [], autoUpdate: true });
+    expect(JSON.parse(await post('{"theme":"dark"}'))).toEqual({ theme: 'dark', libraryRoots: [], autoUpdate: true, darkTint: 'navy', darkLevel: 3 });
     const html = (await get('/')).body;
     expect(html).toContain('<html data-theme="dark"');
     expect(html).toContain('<meta name="ls-theme" content="dark">');
-    expect(JSON.parse(await post('{"theme":"purple"}'))).toEqual({ theme: 'dark', libraryRoots: [], autoUpdate: true }); // invalid values are ignored
-    expect(JSON.parse(await post('{"theme":"system"}'))).toEqual({ theme: 'system', libraryRoots: [], autoUpdate: true });
+    expect(JSON.parse(await post('{"theme":"purple"}'))).toEqual({ theme: 'dark', libraryRoots: [], autoUpdate: true, darkTint: 'navy', darkLevel: 3 }); // invalid values are ignored
+    expect(JSON.parse(await post('{"theme":"system"}'))).toEqual({ theme: 'system', libraryRoots: [], autoUpdate: true, darkTint: 'navy', darkLevel: 3 });
+
+    // Dark mode colors: stamped into the page (first paint), bad values ignored or clamped.
+    expect((await get('/')).body).toContain('<meta name="ls-dark" content="navy:3">');
+    expect(JSON.parse(await post('{"darkTint":"warm","darkLevel":9}'))).toMatchObject({ darkTint: 'warm', darkLevel: 5 });
+    expect(JSON.parse(await post('{"darkTint":"neon"}'))).toMatchObject({ darkTint: 'warm' });
+    const page = (await get('/')).body;
+    expect(page).toContain('<meta name="ls-dark" content="warm:5">');
+    expect(page).toContain(`<style id="ls-dark">:root[data-theme='dark']{--bg:${darkPalette('warm', 5).bg};`);
+    expect(page.indexOf('app.css')).toBeLessThan(page.indexOf('<style id="ls-dark">')); // after app.css, so it wins
   });
 
   it('answers unknown paths through the kiwix proxy with a friendly 503 when kiwix is down', async () => {

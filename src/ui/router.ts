@@ -9,7 +9,10 @@ export type Route =
   | { name: 'search'; q: string; f: Filter; c: string }
   | { name: 'read'; u: string; t: string }
   | { name: 'browse'; folder: string }
-  | { name: 'library' };
+  | { name: 'library' }
+  | { name: 'settings' }
+  /** The guide (Settings -> Guide); section = a DocSection id, '' = the first. */
+  | { name: 'docs'; section: string };
 
 const FILTERS: Filter[] = ['all', 'books', 'reference', 'khan', 'qa'];
 
@@ -45,6 +48,10 @@ export function parseHash(hash: string): Route {
       return { name: 'browse', folder: parts.length > 1 ? safeDecode(parts.slice(1).join('/')) : '' };
     case 'library':
       return { name: 'library' };
+    case 'settings':
+      return { name: 'settings' };
+    case 'docs':
+      return { name: 'docs', section: parts.length > 1 ? safeDecode(parts[1]) : '' };
     default:
       return { name: 'home' };
   }
@@ -79,6 +86,10 @@ export function routeToHash(r: Route): string {
       return r.folder ? '#/browse/' + encodeURIComponent(r.folder) : '#/browse';
     case 'library':
       return '#/library';
+    case 'settings':
+      return '#/settings';
+    case 'docs':
+      return r.section ? '#/docs/' + encodeURIComponent(r.section) : '#/docs';
   }
 }
 

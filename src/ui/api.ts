@@ -33,6 +33,8 @@ function meta(name: string): string {
 export const TOKEN = meta('ls-token');
 /** Theme saved on the server when the page was served ('system' | 'light' | 'dark'). */
 export const INITIAL_THEME = meta('ls-theme');
+/** Dark mode colors saved on the server, "<tint>:<level>" (e.g. "navy:3"). */
+export const INITIAL_DARK = meta('ls-dark');
 export const native: NativeBridge | undefined = window.librarySearch;
 export const MODE: 'electron' | 'browser' =
   meta('ls-mode') === 'electron' || native ? 'electron' : 'browser';

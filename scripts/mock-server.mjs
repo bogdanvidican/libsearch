@@ -20,6 +20,8 @@ const state = {
   build: { done: 0, total: 546, startedAt: 0, phase: 'idle', finishedAt: 0 },
   update: 'up-to-date',
   auto: true,
+  darkTint: 'navy',
+  darkLevel: 3,
 };
 
 const NOTES = 'Library Search updates itself: new versions download in the background and install when the app closes.\n\n- Updates card on the Library page\n- "Update ready" in the status bar';
@@ -302,7 +304,9 @@ http
       if (p === '/api/settings') {
         const body = req.method === 'POST' ? await readBody(req) : {};
         if (typeof body.autoUpdate === 'boolean') state.auto = body.autoUpdate;
-        return json(res, 200, { theme: body.theme || 'system', libraryRoots: [], autoUpdate: state.auto });
+        if (body.darkTint) state.darkTint = body.darkTint;
+        if (body.darkLevel) state.darkLevel = body.darkLevel;
+        return json(res, 200, { theme: body.theme || 'system', libraryRoots: [], autoUpdate: state.auto, darkTint: state.darkTint, darkLevel: state.darkLevel });
       }
       if (p === '/api/search') return json(res, 200, bookSearch(u.searchParams.get('q') || '', u.searchParams.get('category') || ''), 650);
       if (p === '/api/kiwix/books') {

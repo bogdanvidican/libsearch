@@ -109,6 +109,7 @@ describe('hash routing', () => {
     roundTrip({ name: 'browse', folder: '' });
     roundTrip({ name: 'browse', folder: '02 Water & Sanitation' });
     roundTrip({ name: 'library' });
+    roundTrip({ name: 'settings' });
   });
 
   it('falls back safely on bad input', () => {

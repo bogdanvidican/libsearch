@@ -1,5 +1,6 @@
 // Types shared by the server (src/server) and the React UI (src/ui).
 // Keep this file free of runtime imports so both bundles can use it.
+import type { DarkTint } from './darkPalette';
 
 /** Highlight markers used inside snippets:  = start of match,  = end of match. */
 export const HL_START = '';
@@ -267,6 +268,9 @@ export interface Settings {
   libraryRoots: string[];
   /** Look for new versions on GitHub when online, download them, and install them when the app closes. */
   autoUpdate: boolean;
+  /** Dark mode colors (src/shared/darkPalette.ts): the tint of the surfaces, and how dark (1 softest - 5 darkest). */
+  darkTint: DarkTint;
+  darkLevel: number;
 }
 
 export type RootsSource = 'flag' | 'env' | 'settings' | 'auto';

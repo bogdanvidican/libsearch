@@ -11,6 +11,7 @@ import { Kiwix } from './kiwix';
 import { openDocument, readEpubEntry } from './opener';
 import { FileStamp, IndexStats, indexStats, indexedFileStamps, listCategories, listDocs, listProblems, resolveDocFile, searchBooks } from './search';
 import { loadSettings, saveSettings } from './settings';
+import { darkCss } from '../shared/darkPalette';
 import { hasCommand } from './tools';
 import { Updater, UpdaterOptions } from './update';
 import { findLibraryFiles, fingerprint } from '../indexer/walk';
@@ -371,13 +372,19 @@ export class App {
     const ext = path.extname(file).toLowerCase();
     let body: Buffer = fs.readFileSync(file);
     if (ext === '.html') {
-      const theme = loadSettings(this.cfg.dataDir).theme;
+      const settings = loadSettings(this.cfg.dataDir);
+      const theme = settings.theme;
       const meta =
         `<meta name="ls-token" content="${this.token}">` +
         `<meta name="ls-mode" content="${this.cfg.mode}">` +
         `<meta name="ls-version" content="${__APP_VERSION__}">` +
-        `<meta name="ls-theme" content="${theme}">`;
-      let html = body.toString('utf8').replace('<!--ls-meta-->', meta);
+        `<meta name="ls-theme" content="${theme}">` +
+        `<meta name="ls-dark" content="${settings.darkTint}:${settings.darkLevel}">`;
+      let html = body
+        .toString('utf8')
+        .replace('<!--ls-meta-->', meta)
+        // The chosen dark colors, after app.css so they win; the UI updates this element when they change.
+        .replace('<!--ls-dark-->', `<style id="ls-dark">${darkCss(settings.darkTint, settings.darkLevel)}</style>`);
       // Stamp an explicit theme on <html> so the first paint already has the right colors.
       if (theme !== 'system') html = html.replace(/<html\b/i, `<html data-theme="${theme}"`);
       body = Buffer.from(html, 'utf8');

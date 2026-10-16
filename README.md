@@ -53,6 +53,13 @@ ELECTRON_RUN_AS_NODE=1 dist/library-search-linux-ia32/library-search \
   dist/library-search-linux-ia32/resources/app/build/server/server.js --mode browser --port 8090 --library-root ..
 ```
 
+The user guide is inside the app (Settings → Help → Open the guide, `#/docs`); its text is `src/ui/docs.ts`. When a
+button label in `src/ui/strings.ts` changes, `tests/ui/docs.test.tsx` fails until the guide says the same.
+
+Working on the UI without an index or kiwix-serve: `node scripts/build.mjs && node scripts/mock-server.mjs` serves
+the built UI on http://127.0.0.1:8099 with fake data; `/__mock?index=building&kiwix=stopped&update=ready` (see the
+file's header) switches states.
+
 All flags: `docs/design.md` → "Entry points and flags". The index is `index/library.sqlite` (gitignored,
 rebuildable; paths inside are relative to the library root, so an index built on the Mac can be copied to the CF-30).
 
@@ -121,7 +128,7 @@ and prints `old -> new` versions.
 
 **Updates after that:** from 0.2.0 on, the app updates itself whenever the computer is online: it checks GitHub
 shortly after it starts, downloads a new version in the background, and installs it when the app is closed
-(Library → Updates has "Check for updates", "Restart now and update" and an off switch). It runs the same install
+(Settings → Updates has "Check for updates", "Restart now and update" and an off switch). It runs the same install
 script (`--wait --status-file …`); its output is in `logs/update.log`. `--no-update` turns it off for one run.
 Copies on 0.1.x need one manual update with the script first.
 
@@ -150,7 +157,7 @@ Copies on 0.1.x need one manual update with the script first.
 ## Layout
 
 ```
-src/shared/  API types        src/server/  HTTP API, search, kiwix proxy, opener
+src/shared/  API types, dark palette  src/server/  HTTP API, search, kiwix proxy, opener, updates
 src/indexer/ PDF/EPUB → FTS5  src/main/    Electron shell + preload
 src/ui/      React app        kit/         kit-root launchers + README section
 scripts/     build, package, docker ia32 test, m0-check

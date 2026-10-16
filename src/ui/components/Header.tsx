@@ -1,19 +1,19 @@
-import { useEffect, useState } from 'react';
-import { BookOpen, House, LayoutGrid, Moon, Settings2, Sun } from 'lucide-react';
+import { BookOpen, House, LayoutGrid, LibraryBig, Settings } from 'lucide-react';
 import { navigate, Route } from '../router';
 import { S } from '../strings';
 import { SearchBox } from './SearchBox';
-import { effectiveTheme, onThemeChange, setTheme } from '../theme';
 
 interface Props {
   route: Route;
   onSearch: (q: string) => void;
   libraryAlert: boolean;
+  /** An update is ready to install, or failed. */
+  settingsAlert: boolean;
   /** Last searched words, kept in the box while reading an article. */
   lastQuery: string;
 }
 
-export function Header({ route, onSearch, libraryAlert, lastQuery }: Props) {
+export function Header({ route, onSearch, libraryAlert, settingsAlert, lastQuery }: Props) {
   const showSearch = route.name !== 'home';
   const q = route.name === 'search' ? route.q : route.name === 'read' ? lastQuery : '';
   const active = route.name;
@@ -45,32 +45,20 @@ export function Header({ route, onSearch, libraryAlert, lastQuery }: Props) {
         />
         <NavButton
           label={S.nav.library}
-          icon={<Settings2 size={20} aria-hidden="true" />}
+          icon={<LibraryBig size={20} aria-hidden="true" />}
           current={active === 'library'}
           alert={libraryAlert}
           onClick={() => navigate({ name: 'library' })}
         />
-        <ThemeToggle />
+        <NavButton
+          label={S.nav.settings}
+          icon={<Settings size={20} aria-hidden="true" />}
+          current={active === 'settings' || active === 'docs'}
+          alert={settingsAlert}
+          onClick={() => navigate({ name: 'settings' })}
+        />
       </nav>
     </header>
-  );
-}
-
-/** One tap between light and dark blue; "Same as computer" lives on the Library page. */
-function ThemeToggle() {
-  const [dark, setDark] = useState(effectiveTheme() === 'dark');
-  useEffect(() => onThemeChange(() => setDark(effectiveTheme() === 'dark')), []);
-  const label = dark ? S.theme.toLight : S.theme.toDark;
-  return (
-    <button
-      type="button"
-      className="topnav__item topnav__item--icon"
-      aria-label={label}
-      title={label}
-      onClick={() => setTheme(dark ? 'light' : 'dark')}
-    >
-      {dark ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
-    </button>
   );
 }
 

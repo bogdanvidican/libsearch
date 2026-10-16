@@ -432,7 +432,7 @@ echo "The first time, the app asks where your library is if it isn't next to the
 if [ "$OLD_VER" = "not installed" ]; then
   echo "On first start the app offers to build the book index (about an hour on the CF-30)."
 fi
-echo "Later versions install themselves when the computer is online (Library -> Updates in the app)."
+echo "Later versions install themselves when the computer is online (Settings -> Updates in the app)."
 write_status "ok $NEW_VER"
 relaunch_app
 exit 0
