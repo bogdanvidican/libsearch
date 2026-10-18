@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
 import { URL } from 'url';
-import { BooksOverview, BuildProgress, DownloadProgress, IndexStatus, ManualItem, Notice, OpenRequest, OpenResult, Settings, Status } from '../shared/api';
+import { BooksOverview, BuildProgress, DownloadProgress, EncyclopediasOverview, IndexStatus, ManualItem, Notice, OpenRequest, OpenResult, Settings, Status } from '../shared/api';
 import { checkLibraryFolder, Config, effectiveRoots, expandHome, insideAppMessage, isInside } from './config';
 import { DB, breakStaleLock, isBusyError, openDb, readIndexerPid, removeStaleLock, withRetry } from './db';
 import { Kiwix } from './kiwix';
@@ -16,10 +16,11 @@ import { darkCss } from '../shared/darkPalette';
 import { hasCommand } from './tools';
 import { Updater, UpdaterOptions } from './update';
 import { findLibraryFiles, fingerprint } from '../indexer/walk';
-import { idleProgress } from '../downloader/books';
 import { booksOverview, destinationProblem, ListRef, markDone } from '../downloader/overview';
 import { manualItems, setManualDone } from '../downloader/manual';
-import { emptyState, loadState } from '../downloader/state';
+import { emptyState, loadState, updateState } from '../downloader/state';
+import { kiwixDirFor, zimsOverview } from '../downloader/zimoverview';
+import { parseZimList } from '../downloader/zimlist';
 
 declare const __APP_VERSION__: string;
 
@@ -66,15 +67,22 @@ export interface AppOptions {
   downloaderPath?: string;
   downloads?: DownloadOptions;
   openUrl?: (url: string) => Promise<OpenResult>;
+  /** After an encyclopedia download: make kiwix-serve pick up the new file (a spy in tests). */
+  restartKiwix?: () => Promise<unknown>;
 }
 
 export class App {
   readonly kiwix: Kiwix;
   readonly updater: Updater;
-  /** Library -> Get books: the books download job. */
+  /** Library -> Get books: the books download job, and the encyclopedias one (they can run side by side). */
   readonly books: DownloadJob;
+  readonly zims: DownloadJob;
   private readonly dlOpts: DownloadOptions;
   private readonly openUrl: (url: string) => Promise<OpenResult>;
+  private readonly restartKiwix: () => Promise<unknown>;
+  /** Stop was clicked (as opposed to the app closing): don't continue it at the next start. */
+  private zimsStoppedByUser = false;
+  private resumeTimer: NodeJS.Timeout | null = null;
   /** Set by server.ts: closes the app so the install script can replace it ("Restart now"). */
   onQuitForUpdate: (() => void) | null = null;
   private db: DB | null = null;
@@ -90,8 +98,16 @@ export class App {
     this.updater = new Updater(cfg, opts.updater);
     const downloader = opts.downloaderPath || path.join(cfg.appDir, 'build', 'downloader', 'downloader.js');
     this.books = new DownloadJob(downloader, 'books');
+    this.zims = new DownloadJob(downloader, 'zims', {
+      onMessage: (m) => {
+        if (m.type === 'zim-done') this.restartKiwix().catch(() => undefined);
+      },
+      onExit: (p) => this.zimsEnded(p),
+    });
     this.dlOpts = opts.downloads || {};
     this.openUrl = opts.openUrl || openUrl;
+    this.restartKiwix =
+      opts.restartKiwix || (() => (this.cfg.kiwixAutostart || this.kiwix.isStartedByUs() ? this.kiwix.restart() : Promise.resolve()));
   }
 
   setPort(port: number): void {
@@ -340,6 +356,91 @@ export class App {
     return this.books.start(args.concat(this.downloadArgs()));
   }
 
+  // ---------- encyclopedias (Library -> Get books -> Encyclopedias) ----------
+
+  private zimListPath(): string {
+    return path.join(this.cfg.appDir, 'kit', 'booklists', 'encyclopedias.txt');
+  }
+
+  zimsOverview(): EncyclopediasOverview {
+    const root = this.cfg.roots[0];
+    return zimsOverview({
+      listPath: this.zimListPath(),
+      roots: this.cfg.roots,
+      appHome: this.cfg.appHome,
+      state: root && fs.existsSync(root) ? loadState(root) : emptyState(),
+      readerFound: !!this.kiwix.findBinary(),
+      platform: process.platform,
+    });
+  }
+
+  startZimDownloads(ids: string[]): DownloadProgress {
+    if (this.zims.running()) return this.zims.progress();
+    let known: string[] = [];
+    try {
+      known = parseZimList(fs.readFileSync(this.zimListPath(), 'utf8'), 'encyclopedias.txt').entries.map((e) => e.id);
+    } catch (e) {
+      known = [];
+    }
+    if (!ids.length || ids.some((i) => known.indexOf(i) < 0)) throw new HttpError(400, 'Choose encyclopedias from the list.');
+    const root = this.downloadRoot();
+    // Remembered with the library: if the app closes meanwhile, the download continues at the next start.
+    updateState(root, (s) => {
+      s.zims.selected = ids;
+      s.zims.resume = true;
+    });
+    this.zimsStoppedByUser = false;
+    const args = ['--library', root, '--kiwix-dir', kiwixDirFor(root), '--list', this.zimListPath()];
+    for (const i of ids) args.push('--zim', i);
+    return this.zims.start(args.concat(this.downloadArgs()));
+  }
+
+  cancelZimDownloads(): DownloadProgress {
+    this.zimsStoppedByUser = true;
+    const root = this.cfg.roots[0];
+    if (root && !destinationProblem(root, this.cfg.appHome)) {
+      try {
+        updateState(root, (s) => {
+          s.zims.resume = false;
+        });
+      } catch (e) {
+        // the library folder can't be written: nothing to continue anyway
+      }
+    }
+    return this.zims.cancel();
+  }
+
+  /** Finished, or stopped by the user: nothing to continue at the next start. (Closing the app keeps it.) */
+  private zimsEnded(p: DownloadProgress): void {
+    if (p.phase !== 'done' && !(p.phase === 'cancelled' && this.zimsStoppedByUser)) return;
+    const root = this.cfg.roots[0];
+    if (!root || destinationProblem(root, this.cfg.appHome)) return;
+    try {
+      updateState(root, (s) => {
+        s.zims.resume = false;
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  /** An encyclopedia download that was running when the app closed continues `delayMs` after the start. */
+  resumeDownloads(delayMs = 30000): void {
+    if (this.resumeTimer) clearTimeout(this.resumeTimer);
+    this.resumeTimer = setTimeout(() => {
+      this.resumeTimer = null;
+      const root = this.cfg.roots[0];
+      if (!root || destinationProblem(root, this.cfg.appHome) || this.zims.running()) return;
+      const s = loadState(root);
+      if (!s.zims.resume || !s.zims.selected.length) return;
+      try {
+        this.startZimDownloads(s.zims.selected);
+      } catch (e) {
+        process.stderr.write(`[server] could not continue the encyclopedia download: ${(e as Error).message}\n`);
+      }
+    }, delayMs);
+  }
+
   // ---------- status ----------
 
   async status(rescan = false): Promise<Status> {
@@ -420,7 +521,7 @@ export class App {
       kiwix: await this.kiwix.status(),
       tools,
       update: this.updater.status(),
-      downloads: { books: this.books.progress(), zims: idleProgress() },
+      downloads: { books: this.books.progress(), zims: this.zims.progress() },
       notices,
     };
   }
@@ -663,6 +764,18 @@ export class App {
         return this.send(res, 200, this.booksOverview());
       }
 
+      case 'GET /api/zims':
+        return this.send(res, 200, this.zimsOverview());
+
+      case 'POST /api/zims/download': {
+        const body = await this.readBody(req);
+        const ids: string[] = Array.isArray(body.ids) ? body.ids.filter((s: unknown): s is string => typeof s === 'string') : [];
+        return this.send(res, 200, this.startZimDownloads(ids));
+      }
+
+      case 'POST /api/zims/cancel':
+        return this.send(res, 200, this.cancelZimDownloads());
+
       case 'GET /api/manual':
         return this.send(res, 200, this.manualItems());
 
@@ -739,6 +852,8 @@ export class App {
   shutdown(): void {
     this.updater.stop();
     this.books.stop();
+    this.zims.stop();
+    if (this.resumeTimer) clearTimeout(this.resumeTimer);
     if (this.indexer) {
       try {
         this.indexer.kill('SIGTERM');

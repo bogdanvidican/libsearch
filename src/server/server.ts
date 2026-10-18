@@ -59,6 +59,8 @@ function listen(port: number, triesLeft: number): void {
       });
     }
     app.updater.start();
+    // An encyclopedia download that was running when the app closed continues by itself.
+    app.resumeDownloads();
   });
 
   let stopping = false;

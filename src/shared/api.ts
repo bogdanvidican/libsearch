@@ -199,6 +199,40 @@ export interface BooksOverview {
   freeBytes?: number;
 }
 
+/** One encyclopedia on Library -> Get books -> Encyclopedias (kit/booklists/encyclopedias.txt). */
+export interface ZimItem {
+  /** The file name prefix, e.g. "wikipedia_en_medicine_maxi_". */
+  id: string;
+  title: string;
+  approxGb: number;
+  /** Downloaded by 3-download-offline-wikipedia.sh. */
+  defaultOn: boolean;
+  /** Chosen for the last download. */
+  selected: boolean;
+  /** ready = a whole .zim is here; partial = a download that was cut off (it continues). */
+  state: 'missing' | 'partial' | 'ready';
+  /** The .zim (or .zim.part) on this computer. */
+  file?: string;
+  /** Bytes on this computer. */
+  have: number;
+  /** Why the last download of it failed. */
+  failure?: { code: string; reason: string };
+}
+
+export interface EncyclopediasOverview {
+  /** The library folder downloads go into (see BooksOverview). */
+  destination: string | null;
+  problem?: Notice;
+  /** Where the .zim files go: the library's Kiwix folder. */
+  kiwixDir: string | null;
+  /** The drive is FAT32: files of 4 GB and more can't go on it. */
+  fat32: boolean;
+  freeBytes?: number;
+  /** kiwix-serve: found, missing (it is downloaded first), or not available here (macOS). */
+  reader: 'ok' | 'missing' | 'unsupported';
+  items: ZimItem[];
+}
+
 /** How a book to save by hand is saved: a download button, Print to PDF, a form first, or a zip to unpack. */
 export type ManualHow = 'button' | 'print-to-pdf' | 'form' | 'zip';
 

@@ -1,4 +1,5 @@
-// Downloader entry point, started by the server like the indexer (one process per job):
+// Downloader entry point, started by the server like the indexer (one process per job: books, or zims =
+// encyclopedias, see the zims branch below):
 //   ELECTRON_RUN_AS_NODE=1 library-search resources/app/build/downloader/downloader.js --job books --library <dir>
 //       [--list <file>]... [--check-url <url>] [--archive-base <url>] [--min-free-mb 500] [--stall-seconds 60]
 //       [--log <file>] [--json]
@@ -9,7 +10,11 @@ import * as os from 'os';
 import * as path from 'path';
 import { DownloadProgress } from '../shared/api';
 import { boolFlag, flag, parseArgs } from '../server/config';
-import { downloadBooks, JobHooks } from './books';
+import { downloadBooks, idleProgress, JobHooks } from './books';
+import { toDownloadError } from './fetchfile';
+import { ensureKiwixTools } from './kiwixtools';
+import { parseZimList, ZimEntry } from './zimlist';
+import { downloadZims } from './zims';
 
 const args = parseArgs(process.argv.slice(2));
 const send = process.send ? process.send.bind(process) : null;
@@ -88,6 +93,64 @@ if (job === 'books') {
     },
     hooks
   ).then(finish, (e) => {
+    log(`crashed: ${(e as Error).stack || e}`);
+    process.stderr.write(String((e as Error).message || e) + '\n');
+    process.exit(1);
+  });
+} else if (job === 'zims') {
+  // Encyclopedias: --list <encyclopedias.txt> --zim <prefix>... [--kiwix-dir <dir>] [--mirror <url>]
+  //   [--retries 200] [--retry-seconds 20] [--stall-seconds 120]. The Kiwix reader comes first when it is missing.
+  const listFile = (args.list || [])[0] || '';
+  const wanted = args.zim || [];
+  const kiwixDir = flag(args, 'kiwix-dir') || path.join(library, '15 Offline Encyclopedias (Kiwix)');
+  const mirror = (flag(args, 'mirror') || 'https://download.kiwix.org').replace(/\/+$/, '');
+  const stallMs = num('stall-seconds', 120) * 1000;
+  let entries: ZimEntry[] = [];
+  try {
+    entries = parseZimList(fs.readFileSync(listFile, 'utf8'), path.basename(listFile)).entries.filter((e) => wanted.indexOf(e.id) >= 0);
+  } catch (e) {
+    log(`can't read the encyclopedia list ${listFile}: ${(e as Error).message}`);
+  }
+  (async () => {
+    let reader = 'present';
+    try {
+      fs.mkdirSync(kiwixDir, { recursive: true });
+      reader = await ensureKiwixTools(kiwixDir, { mirror, arch: process.arch, platform: process.platform, stallMs, isCancelled: () => cancelled, log });
+      // A new reader: the server can start the encyclopedias now.
+      if (reader === 'installed') tell({ type: 'zim-done', file: path.join(kiwixDir, 'kiwix-tools', 'kiwix-serve') });
+    } catch (e) {
+      if (toDownloadError(e).code === 'cancelled') {
+        const p = Object.assign(idleProgress(), { phase: 'cancelled' as const, finishedAt: Date.now() });
+        report(p);
+        return finish(p);
+      }
+      reader = 'failed';
+      log(`kiwix reader: ${(e as Error).message}`);
+    }
+    const p = await downloadZims(
+      {
+        library,
+        kiwixDir,
+        entries,
+        mirror,
+        retries: num('retries', 200),
+        retryDelayMs: num('retry-seconds', 20) * 1000,
+        stallMs,
+        minFreeMb: num('min-free-mb', 500),
+      },
+      Object.assign({}, hooks, { onZimDone: (file: string) => tell({ type: 'zim-done', file }) })
+    );
+    if (reader === 'failed' && !p.notice) {
+      p.notice = {
+        kind: 'warning',
+        code: 'zims-reader',
+        message: 'The Kiwix reader (kiwix-serve) could not be downloaded, so the encyclopedias can’t be opened yet.',
+        fix: 'Click Download again later. The encyclopedias already downloaded stay.',
+      };
+      report(p);
+    }
+    finish(p);
+  })().catch((e) => {
     log(`crashed: ${(e as Error).stack || e}`);
     process.stderr.write(String((e as Error).message || e) + '\n');
     process.exit(1);

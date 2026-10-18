@@ -102,7 +102,7 @@ export function inspectZim(file: string): ZimCheck {
 }
 
 const SKIP_FIX: Record<SkippedZim['code'], string> = {
-  incomplete: 'Run 3-download-offline-wikipedia.sh (or 4-download-khan-academy.sh) again to finish the download, then press Check again.',
+  incomplete: 'Finish the download under Library -> Get books -> Encyclopedias (or run 3-download-offline-wikipedia.sh / 4-download-khan-academy.sh again), then press Check again.',
   'not-zim': 'Delete this file, or download it again.',
   unreadable: 'Check that the drive holding it is connected, then press Check again.',
   rejected: 'The file may be damaged or too new for this kiwix-serve. Download it again, or delete it.',
