@@ -168,7 +168,34 @@ describe('downloadBooks', () => {
     expect(hits['/403/good.pdf']).toBeUndefined();
     expect(fs.existsSync(path.join(med, 'Junk.pdf'))).toBe(false);
     expect(fs.readdirSync(med).filter((n) => /\.bad$/.test(n))).toEqual([]);
+    expect(fs.existsSync(path.join(med, 'Good.pdf.part'))).toBe(false); // a stale .part beside a good book is junk
     expect(p.failed).toBe(1);
+  });
+
+  it('never sets aside or overwrites a folder that sits where a book should go', async () => {
+    const c = newCase([`F|01 Medicine|Sub|${base}/pdf/sub.pdf`]);
+    const sub = path.join(c.lib, '01 Medicine', 'Sub');
+    fs.mkdirSync(sub);
+    fs.writeFileSync(path.join(sub, 'inner.pdf'), pdf('inner'));
+    const p = await c.run();
+    expect(fs.readFileSync(path.join(sub, 'inner.pdf'), 'utf8')).toBe(pdf('inner'));
+    expect(fs.readdirSync(path.join(c.lib, '01 Medicine')).sort()).toEqual(['Sub']);
+    expect(p.failed).toBe(1);
+    expect(loadState(c.lib).books.failures[0].reason).toMatch(/folder/);
+  });
+
+  it('stops plainly when the library folder disappears mid-run, and does not make it again', async () => {
+    const c = newCase([`F|01 Medicine|One.pdf|${base}/403/one.pdf`, `F|01 Medicine|Two.pdf|${base}/slow.pdf`, `F|02 Water|Three.pdf|${base}/pdf/three.pdf`]);
+    const unplugged = c.lib + ' (unplugged)';
+    const p = await c.run({}, (pr) => {
+      // Pulled out while the second book is coming in.
+      if (pr.currentFile === '01 Medicine/Two.pdf' && pr.fileReceived > 0 && fs.existsSync(c.lib)) fs.renameSync(c.lib, unplugged);
+      return false;
+    });
+    expect(p.phase).toBe('failed');
+    expect(p.notice && p.notice.code).toBe('library-missing');
+    expect(fs.existsSync(c.lib)).toBe(false);
+    expect(hits['/pdf/three.pdf']).toBeUndefined();
   });
 
   it('records 403, 202-empty, bot-check HTML and empty scrape pages as failures with reasons', async () => {

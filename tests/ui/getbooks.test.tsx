@@ -103,6 +103,9 @@ describe('Get books page', () => {
       button(el, S.books.stop)!.click();
     });
     expect(cancel).toHaveBeenCalled();
+    // It may take a moment: the button says so and can't be clicked again.
+    const stopping = button(el, S.books.stopping)!;
+    expect(stopping.disabled).toBe(true);
     done();
   });
 

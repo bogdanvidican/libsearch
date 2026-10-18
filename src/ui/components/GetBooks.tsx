@@ -202,6 +202,8 @@ function DownloadCard({ o, job, onStart, onStop }: { o: BooksOverview; job: Down
 }
 
 export function JobProgress({ job, onStop }: { job: DownloadProgress; onStop: () => void }) {
+  // Stopping can take a moment (a site that is still connecting): say so, and don't take a second click.
+  const [stopping, setStopping] = useState(false);
   const pct = percent(job.done, job.total);
   return (
     <div className="build" aria-live="polite">
@@ -221,9 +223,17 @@ export function JobProgress({ job, onStop }: { job: DownloadProgress; onStop: ()
       ) : null}
       <p className="build__eta">{S.books.continuesLater}</p>
       <div className="btn-row">
-        <button type="button" className="btn btn--secondary" onClick={onStop}>
+        <button
+          type="button"
+          className="btn btn--secondary"
+          disabled={stopping}
+          onClick={() => {
+            setStopping(true);
+            onStop();
+          }}
+        >
           <Square size={18} aria-hidden="true" />
-          {S.books.stop}
+          {stopping ? S.books.stopping : S.books.stop}
         </button>
       </div>
     </div>

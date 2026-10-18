@@ -1,4 +1,5 @@
 // Library -> Get books through the server API, with the real downloader process (bundled into a temp file).
+import { fork } from 'child_process';
 import * as esbuild from 'esbuild';
 import * as fs from 'fs';
 import * as http from 'http';
@@ -236,6 +237,29 @@ describe('stopping and refusing', () => {
     } finally {
       api.close();
     }
+  });
+
+  it('the downloader stops cleanly when the app goes away mid-download', async () => {
+    const lib = path.join(tmp, 'books', 'Gone Library');
+    fs.mkdirSync(path.join(lib, '01 Medicine'), { recursive: true });
+    const list = path.join(tmp, 'gone-list.txt');
+    fs.writeFileSync(list, `F|01 Medicine|Slow.pdf|${siteBase}/slow.pdf\n`);
+    const child = fork(downloader, ['--job', 'books', '--library', lib, '--list', list, '--check-url', `${siteBase}/`, '--min-free-mb', '0'], {
+      stdio: ['ignore', 'ignore', 'pipe', 'ipc'],
+      execArgv: [],
+    });
+    let stderr = '';
+    child.stderr!.on('data', (d) => (stderr += d));
+    const exited = new Promise<number | null>((r) => child.on('exit', (c) => r(c)));
+    await new Promise<void>((resolve) =>
+      child.on('message', (m: { progress?: { fileReceived: number } }) => {
+        if (m.progress && m.progress.fileReceived > 0) resolve();
+      })
+    );
+    child.disconnect(); // what happens to the channel when the app closes
+    expect(await exited, stderr).toBe(3);
+    expect(fs.existsSync(path.join(lib, '01 Medicine', 'Slow.pdf.part'))).toBe(true);
+    expect(fs.existsSync(path.join(lib, 'library-search-downloads.json'))).toBe(true);
   });
 
   it('refuses to download into a library folder inside the app', async () => {

@@ -92,7 +92,7 @@ export async function fetchToFile(url: string, file: string, o: FetchOptions, re
   if (have > 0) headers.Range = `bytes=${have}-`;
   let res: http.IncomingMessage;
   try {
-    res = await get(url, headers, o.stallMs);
+    res = await get(url, headers, o.stallMs, { isCancelled: o.isCancelled });
   } catch (e) {
     if (e instanceof HttpStatusError && e.status === 416 && have > 0 && !retried416) {
       // The .part is as long as (or longer than) the file: start again from nothing.

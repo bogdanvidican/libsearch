@@ -95,6 +95,7 @@ beforeAll(async () => {
       res.write('abc');
       return;
     }
+    if (u === '/hang') return; // accepts the connection, never answers
     if (u === '/slow') {
       res.writeHead(200, { 'Content-Length': 1000 });
       let i = 0;
@@ -185,6 +186,15 @@ describe('fetchToFile', () => {
     const kept = fs.readFileSync(f + '.part', 'utf8').length;
     expect(kept).toBeGreaterThanOrEqual(30);
     expect(kept).toBeLessThan(1000);
+  });
+
+  it('stops at once when cancelled while the site is still connecting', async () => {
+    let cancel = false;
+    setTimeout(() => (cancel = true), 300);
+    const t0 = Date.now();
+    const e = await failure(fetchToFile(`${base}/hang`, target(), { stallMs: 20000, isCancelled: () => cancel, onBytes: () => undefined }));
+    expect(e.code).toBe('cancelled');
+    expect(Date.now() - t0).toBeLessThan(2000);
   });
 
   it('reports progress with the bytes already on disk counted', async () => {

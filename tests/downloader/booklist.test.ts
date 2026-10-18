@@ -48,6 +48,12 @@ describe('parseBookList', () => {
     expect(r.problems.length).toBe(3);
   });
 
+  it('refuses . and .. as file names (they would point at a folder)', () => {
+    const r = parseBookList(['F|01 Medicine|..|https://ex.org/x.pdf', 'F|01 Medicine|.|https://ex.org/x.pdf', 'A|01 Medicine|..'].join('\n'), 'local.txt');
+    expect(r.entries).toEqual([]);
+    expect(r.problems.length).toBe(3);
+  });
+
   it('gives each entry a stable id', () => {
     const [f, s, a] = parseBookList('F|01 M|x.pdf|https://e/x.pdf\nS|01 M|https://e/p|re\nA|01 M|item', 'l').entries;
     expect([entryId(f), entryId(s), entryId(a)]).toEqual(['01 M|x.pdf', 'S|01 M|https://e/p', 'A|01 M|item']);

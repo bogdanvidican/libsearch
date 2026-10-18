@@ -29,7 +29,7 @@ function lineProblem(type: string, folder: string, a: string, b: string): string
   const bad = folderProblem(folder);
   if (bad) return bad;
   if (type === 'F') {
-    if (!a || /[\\/]/.test(a)) return `bad file name "${a}"`;
+    if (!a || /[\\/]/.test(a) || a === '.' || a === '..') return `bad file name "${a}"`;
     if (!/^https?:\/\//i.test(b)) return `"${b}" is not a web address`;
   } else if (type === 'S') {
     if (!/^https?:\/\//i.test(a)) return `"${a}" is not a web address`;
@@ -39,7 +39,7 @@ function lineProblem(type: string, folder: string, a: string, b: string): string
       return `the pattern "${b}" can't be read`;
     }
     if (!b) return 'no pattern';
-  } else if (!a || /[\\/]/.test(a)) {
+  } else if (!a || /[\\/]/.test(a) || a === '.' || a === '..') {
     return `bad archive.org name "${a}"`;
   }
   return null;

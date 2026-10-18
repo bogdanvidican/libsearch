@@ -17,9 +17,16 @@ export function codeError(code: string, message: string): NodeJS.ErrnoException 
 /**
  * GET with redirects (GitHub and download sites send files to other servers). Resolves for 2xx answers only.
  * The token never leaves the host it was meant for. `timeoutMs` is the longest silence allowed - while
- * connecting and while the body arrives - so a stalled download fails with ETIMEDOUT.
+ * connecting and while the body arrives - so a stalled download fails with ETIMEDOUT. `isCancelled` is asked every
+ * 200 ms until the answer starts, so Stop works while a slow site is still connecting (ECANCELED).
  */
-export function get(url: string, headers: Record<string, string>, timeoutMs: number, redirects = 10): Promise<http.IncomingMessage> {
+export function get(
+  url: string,
+  headers: Record<string, string>,
+  timeoutMs: number,
+  opts: { redirects?: number; isCancelled?: () => boolean } = {}
+): Promise<http.IncomingMessage> {
+  const redirects = opts.redirects === undefined ? 10 : opts.redirects;
   return new Promise((resolve, reject) => {
     let u: URL;
     try {
@@ -34,7 +41,13 @@ export function get(url: string, headers: Record<string, string>, timeoutMs: num
       return;
     }
     let current: http.IncomingMessage | null = null;
+    let watch: NodeJS.Timeout | null = null;
+    const unwatch = () => {
+      if (watch) clearInterval(watch);
+      watch = null;
+    };
     const req = mod.get(u, { headers }, (res) => {
+      unwatch();
       const status = res.statusCode || 0;
       const loc = res.headers.location;
       if (status >= 300 && status < 400 && loc) {
@@ -46,7 +59,7 @@ export function get(url: string, headers: Record<string, string>, timeoutMs: num
         const next = new URL(loc, u);
         const h = Object.assign({}, headers);
         if (next.host !== u.host) delete h.Authorization;
-        get(next.toString(), h, timeoutMs, redirects - 1).then(resolve, reject);
+        get(next.toString(), h, timeoutMs, { redirects: redirects - 1, isCancelled: opts.isCancelled }).then(resolve, reject);
         return;
       }
       if (status < 200 || status >= 300) {
@@ -63,7 +76,19 @@ export function get(url: string, headers: Record<string, string>, timeoutMs: num
       if (current) current.destroy(e);
       req.destroy(e);
     });
-    req.on('error', reject);
+    req.on('error', (e) => {
+      unwatch();
+      reject(e);
+    });
+    const isCancelled = opts.isCancelled;
+    if (isCancelled) {
+      watch = setInterval(() => {
+        if (isCancelled()) {
+          unwatch();
+          req.destroy(codeError('ECANCELED', 'cancelled'));
+        }
+      }, 200);
+    }
   });
 }
 

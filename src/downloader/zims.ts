@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { DownloadFailure, DownloadProgress, Notice } from '../shared/api';
 import { get, readBody } from '../server/net';
-import { checkOnline, idleProgress, JobHooks, reporter, Speed } from './books';
+import { checkOnline, idleProgress, JobHooks, libraryGone, libraryGoneNotice, reporter, Speed } from './books';
 import { freeBytes, fsType } from './disk';
 import { DownloadError, fetchToFile, rangeTotal, toDownloadError, USER_AGENT } from './fetchfile';
 import { updateState } from './state';
@@ -99,8 +99,8 @@ function pause(ms: number, isCancelled: () => boolean): Promise<void> {
 }
 
 /** The full size of a file on the mirror (asks for its first byte only). 0 when the site doesn't say. */
-async function remoteSize(url: string, stallMs: number): Promise<number> {
-  const res = await get(url, { 'User-Agent': USER_AGENT, Range: 'bytes=0-0' }, stallMs);
+async function remoteSize(url: string, stallMs: number, isCancelled: () => boolean): Promise<number> {
+  const res = await get(url, { 'User-Agent': USER_AGENT, Range: 'bytes=0-0' }, stallMs, { isCancelled });
   const total = rangeTotal(res) || Number(res.headers['content-length']) || 0;
   res.destroy();
   return res.statusCode === 206 ? total : Number(res.headers['content-length']) || 0;
@@ -142,7 +142,7 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
   };
 
   emit(true);
-  const offline = await checkOnline(mirror + '/');
+  const offline = await checkOnline(mirror + '/', () => h.isCancelled());
   if (offline) return stop('failed', offline);
   try {
     fs.mkdirSync(o.kiwixDir, { recursive: true });
@@ -162,7 +162,7 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
     emit(true);
     let name: string | null;
     try {
-      name = newestZimFile(await readBody(await get(folderUrl, { 'User-Agent': USER_AGENT }, o.stallMs), 20 * 1048576), e.prefix);
+      name = newestZimFile(await readBody(await get(folderUrl, { 'User-Agent': USER_AGENT }, o.stallMs, { isCancelled: () => h.isCancelled() }), 20 * 1048576), e.prefix);
     } catch (err) {
       const d = toDownloadError(err);
       if (d.code === 'cancelled') throw d;
@@ -175,7 +175,7 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
     p.currentFile = name;
     let total: number;
     try {
-      total = await remoteSize(url, o.stallMs);
+      total = await remoteSize(url, o.stallMs, () => h.isCancelled());
     } catch (err) {
       const d = toDownloadError(err);
       if (d.code === 'cancelled') throw d;
@@ -266,6 +266,8 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
   try {
     for (const e of o.entries) {
       if (h.isCancelled()) throw new DownloadError('cancelled');
+      const gone = libraryGone(o.library);
+      if (gone) throw gone;
       attempted.add(e.id);
       await one(e);
       p.done++;
@@ -275,6 +277,7 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
     const d = toDownloadError(err);
     save(false);
     if (d.code === 'cancelled') return stop('cancelled');
+    if (d.code === 'library-gone') return stop('failed', libraryGoneNotice(o.library));
     if (d.code === 'disk-full') {
       return stop('failed', { kind: 'error', code: 'downloads-disk-full', message: 'The disk became full, so the download stopped.', fix: 'Free some space, then click Download again: it continues where it stopped.' });
     }

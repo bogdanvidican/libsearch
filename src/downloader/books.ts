@@ -89,6 +89,36 @@ function remove(p: string): void {
   }
 }
 
+function isDir(p: string): boolean {
+  try {
+    return fs.statSync(p).isDirectory();
+  } catch (e) {
+    return false;
+  }
+}
+
+function isFile(p: string): boolean {
+  try {
+    return fs.statSync(p).isFile();
+  } catch (e) {
+    return false;
+  }
+}
+
+/** The library folder went away (a USB drive pulled out): stop, and never make it again somewhere else. */
+export function libraryGone(library: string): DownloadError | null {
+  return isDir(library) ? null : new DownloadError('library-gone', `The library folder can't be found any more: ${library}`);
+}
+
+export function libraryGoneNotice(library: string): Notice {
+  return {
+    kind: 'error',
+    code: 'library-missing',
+    message: `The library folder can't be found any more: ${library}`,
+    fix: 'If it is on a USB drive, plug it in again, then click Download: it continues where it stopped.',
+  };
+}
+
 function sizeOf(p: string): number {
   try {
     return fs.statSync(p).size;
@@ -109,9 +139,9 @@ export function reporter(h: JobHooks, p: DownloadProgress): (force?: boolean) =>
 }
 
 /** Is the internet there? A site answering with an error still means yes. */
-export async function checkOnline(url: string): Promise<Notice | null> {
+export async function checkOnline(url: string, isCancelled?: () => boolean): Promise<Notice | null> {
   try {
-    const res = await get(url, { 'User-Agent': USER_AGENT }, 20000);
+    const res = await get(url, { 'User-Agent': USER_AGENT }, 20000, { isCancelled });
     res.resume();
     return null;
   } catch (e) {
@@ -143,7 +173,7 @@ export async function downloadBooks(o: BooksJob, h: JobHooks): Promise<DownloadP
   emit(true);
 
   // 1. Internet, 2. space, 3. the lists.
-  const offline = await checkOnline(o.checkUrl);
+  const offline = await checkOnline(o.checkUrl, () => h.isCancelled());
   if (offline) return stop('failed', offline);
   if (h.isCancelled()) return stop('cancelled');
   // 0 = don't check at all (no df: QEMU, where the i386 test runs, can't start other programs from Electron's Node).
@@ -212,7 +242,18 @@ export async function downloadBooks(o: BooksJob, h: JobHooks): Promise<DownloadP
     p.currentFile = `${folder}/${name}`;
     p.fileReceived = 0;
     p.fileTotal = 0;
+    const gone = libraryGone(o.library);
+    if (gone) throw gone;
+    if (path.relative(o.library, out).split(path.sep)[0] === '..') {
+      fail(id, folder, name, url, new DownloadError('failed', `"${folder}/${name}" would be outside the library folder, so it was skipped.`));
+      return;
+    }
+    if (exists(out) && !isFile(out)) {
+      fail(id, folder, name, url, new DownloadError('failed', `"${folder}/${name}" is a folder, not a book file, so it was left alone.`));
+      return;
+    }
     if (done.has(id) || (exists(out) && isValidFile(out))) {
+      if (exists(out)) remove(part); // a leftover from an earlier try: the book is here
       p.skipped++;
       return;
     }
@@ -250,6 +291,9 @@ export async function downloadBooks(o: BooksJob, h: JobHooks): Promise<DownloadP
         h.log(`trying ${url} again after: ${err.message}`);
       }
     }
+    // Pulled out while downloading: what arrived is with the drive; stop here.
+    const goneNow = libraryGone(o.library);
+    if (goneNow) throw goneNow;
     if (err && (err.code === 'cancelled' || err.code === 'disk-full')) throw err;
     if (!err) {
       if (isValidFile(part)) {
@@ -289,7 +333,7 @@ export async function downloadBooks(o: BooksJob, h: JobHooks): Promise<DownloadP
     p.currentFile = page;
     let html: string;
     try {
-      html = await readBody(await get(page, { 'User-Agent': USER_AGENT }, o.stallMs), 5 * MB);
+      html = await readBody(await get(page, { 'User-Agent': USER_AGENT }, o.stallMs, { isCancelled: () => h.isCancelled() }), 5 * MB);
     } catch (err) {
       failWhole(e, page, err);
       p.done++;
@@ -315,7 +359,9 @@ export async function downloadBooks(o: BooksJob, h: JobHooks): Promise<DownloadP
     p.currentFile = details;
     let names: string[];
     try {
-      names = archivePdfNames(await readBody(await get(`${o.archiveBase}/metadata/${e.a}`, { 'User-Agent': USER_AGENT }, o.stallMs), 50 * MB));
+      names = archivePdfNames(
+        await readBody(await get(`${o.archiveBase}/metadata/${e.a}`, { 'User-Agent': USER_AGENT }, o.stallMs, { isCancelled: () => h.isCancelled() }), 50 * MB)
+      );
     } catch (err) {
       failWhole(e, details, err);
       p.done++;
@@ -373,6 +419,7 @@ export async function downloadBooks(o: BooksJob, h: JobHooks): Promise<DownloadP
     const d = toDownloadError(err);
     save(false);
     if (d.code === 'cancelled') return stop('cancelled');
+    if (d.code === 'library-gone') return stop('failed', libraryGoneNotice(o.library));
     if (d.code === 'disk-full') {
       return stop('failed', { kind: 'error', code: 'downloads-disk-full', message: 'The disk became full, so the downloads stopped.', fix: 'Free some space, then click Download again: it continues where it stopped.' });
     }

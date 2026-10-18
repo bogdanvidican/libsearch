@@ -40,8 +40,18 @@ function log(line: string) {
   }
 }
 
+/** To the server, while it is there: when the app closes, the channel goes and sending would crash this process. */
+function tell(message: unknown) {
+  if (!send || !process.connected) return;
+  try {
+    (send as (m: unknown, cb: (e: Error | null) => void) => boolean)(message, () => undefined);
+  } catch (e) {
+    // the channel just closed
+  }
+}
+
 function report(p: DownloadProgress) {
-  if (send) send({ type: 'progress', progress: p });
+  tell({ type: 'progress', progress: p });
   if (json) process.stdout.write(JSON.stringify({ type: 'progress', progress: p }) + '\n');
 }
 
@@ -49,7 +59,7 @@ function finish(p: DownloadProgress) {
   log(`${p.phase}: ${p.downloaded} downloaded, ${p.skipped} already there, ${p.failed} failed${p.notice ? ' - ' + p.notice.message : ''}`);
   const code = p.phase === 'done' ? 0 : p.phase === 'cancelled' ? 3 : 1;
   // Give the IPC channel a moment to deliver the last progress message.
-  setTimeout(() => process.exit(code), send ? 100 : 0);
+  setTimeout(() => process.exit(code), send && process.connected ? 100 : 0);
 }
 
 const hooks: JobHooks = { onProgress: report, isCancelled: () => cancelled, log };
