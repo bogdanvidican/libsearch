@@ -12,12 +12,10 @@
 import { spawn } from 'child_process';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
-import * as http from 'http';
-import * as https from 'https';
 import * as path from 'path';
-import { URL } from 'url';
 import { Notice, UpdateStatus } from '../shared/api';
 import { Config } from './config';
+import { codeError, get, HttpStatusError, isOfflineError, readBody } from './net';
 import { loadSettings } from './settings';
 
 declare const __APP_VERSION__: string;
@@ -116,13 +114,7 @@ export function releaseSuffix(appDir: string): string {
   return /^(-e\d+)?$/.test(s) ? s : '';
 }
 
-// ---------- HTTP (Node 12 has no fetch) ----------
-
-class HttpStatusError extends Error {
-  constructor(readonly status: number, host: string) {
-    super(`HTTP ${status} from ${host}`);
-  }
-}
+// ---------- errors ----------
 
 class NoticeError extends Error {
   constructor(readonly notice: Notice) {
@@ -130,73 +122,11 @@ class NoticeError extends Error {
   }
 }
 
-function codeError(code: string, message: string): NodeJS.ErrnoException {
-  return Object.assign(new Error(message), { code });
-}
-
-/** GET with redirects (GitHub sends downloads to a storage server). The token never leaves the host it was meant for. */
-function get(url: string, headers: Record<string, string>, timeoutMs: number, redirects = 5): Promise<http.IncomingMessage> {
-  return new Promise((resolve, reject) => {
-    let u: URL;
-    try {
-      u = new URL(url);
-    } catch (e) {
-      reject(e);
-      return;
-    }
-    const mod = u.protocol === 'https:' ? https : u.protocol === 'http:' ? http : null;
-    if (!mod) {
-      reject(new Error(`unsupported address ${url}`));
-      return;
-    }
-    const req = mod.get(u, { headers }, (res) => {
-      const status = res.statusCode || 0;
-      const loc = res.headers.location;
-      if (status >= 300 && status < 400 && loc) {
-        res.resume();
-        if (redirects <= 0) {
-          reject(new Error('too many redirects'));
-          return;
-        }
-        const next = new URL(loc, u);
-        const h = Object.assign({}, headers);
-        if (next.host !== u.host) delete h.Authorization;
-        get(next.toString(), h, timeoutMs, redirects - 1).then(resolve, reject);
-        return;
-      }
-      if (status < 200 || status >= 300) {
-        res.resume();
-        reject(new HttpStatusError(status, u.host));
-        return;
-      }
-      resolve(res);
-    });
-    req.setTimeout(timeoutMs, () => req.destroy(codeError('ETIMEDOUT', 'timed out')));
-    req.on('error', reject);
-  });
-}
-
-function readBody(res: http.IncomingMessage, max: number): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    let n = 0;
-    res.on('data', (d: Buffer) => {
-      n += d.length;
-      if (n > max) res.destroy(new Error('answer too large'));
-      else chunks.push(d);
-    });
-    res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    res.on('error', reject);
-  });
-}
-
-const OFFLINE_CODES = ['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENETUNREACH', 'EHOSTUNREACH', 'ENETDOWN', 'ECONNABORTED', 'EPIPE'];
-
 /** Plain-language notice for a failed check or download; `offline` = no internet, nothing to worry about. */
 export function describeError(e: unknown, what: 'check' | 'download'): { offline: boolean; notice: Notice } {
   if (e instanceof NoticeError) return { offline: false, notice: e.notice };
   const code = String((e as NodeJS.ErrnoException | null)?.code || '');
-  if (OFFLINE_CODES.indexOf(code) >= 0) {
+  if (isOfflineError(e)) {
     return {
       offline: true,
       notice: {
