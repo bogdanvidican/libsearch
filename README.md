@@ -87,8 +87,9 @@ It writes `library-search-app/m0-report-<date>.txt`; paste it into `NOTES.md`.
 
 ## Releasing
 
-The repo root is this folder (`library-search-app/`); the kit scripts (`0-…` to `5-…`) live outside it.
-Launchers for the kit root are kept in `kit/` and copied into the kit folder by the install script.
+The repo root is this folder (`library-search-app/`). `kit/` holds the download kit that ships inside the app:
+the download scripts `1-…` to `5-…`, the kit guide `0-README-start-here.md`, the book lists in `kit/booklists/`,
+and the `6-*` launchers (copied into the kit folder by the install script).
 
 1. Bump `version` in `package.json`, commit.
 2. `npm run check && npm run dist:linux-ia32` (optionally `npm run test:ia32`).
@@ -159,7 +160,7 @@ Copies on 0.1.x need one manual update with the script first.
 ```
 src/shared/  API types, dark palette  src/server/  HTTP API, search, kiwix proxy, opener, updates
 src/indexer/ PDF/EPUB → FTS5  src/main/    Electron shell + preload
-src/ui/      React app        kit/         kit-root launchers + README section
+src/ui/      React app        kit/         download scripts, book lists, launchers
 scripts/     build, package, docker ia32 test, m0-check
 tests/       vitest + fixtures (tests/fixtures/library is a tiny fake library)
 ```

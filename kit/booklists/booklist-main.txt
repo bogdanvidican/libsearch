@@ -1,0 +1,261 @@
+# Format:  F|folder|filename|url      = single file
+#          S|folder|page-url|regex   = scrape every matching link on a page
+#          A|folder|archive.org-id   = every PDF in an archive.org item
+F|01 Medicine|Surgical_Care_at_the_District_Hospital_WHO.pdf|https://iris.who.int/server/api/core/bitstreams/8ece1ef3-1a8f-4003-a0a9-d46c3fa4f748/content
+F|01 Medicine|Special_Forces_Medical_Handbook_ST31-91B.pdf|https://irp.fas.org/doddir/milmed/sfhandbook.pdf
+F|01 Medicine|TC4-02.1_First_Aid_US_Army.pdf|https://ciehub.info/ref/TC/4-02x1_2018.pdf
+F|01 Medicine|ATP4-02.11_First_Aid_US_Army.pdf|https://armypubs.army.mil/epubs/DR_pubs/DR_a/ARN46159-ATP_4-02.11-000-WEB-1.pdf
+F|01 Medicine|WHO_Model_Formulary_2008.pdf|https://iris.who.int/server/api/core/bitstreams/ce78cf9a-ab0f-446e-a602-8b7e858cce41/content
+F|01 Medicine|WHO_Psychological_First_Aid.pdf|https://iris.who.int/server/api/core/bitstreams/e7e129fb-b306-496d-84a5-67bb70abc130/content
+F|01 Medicine|Grays_Anatomy_1918.pdf|https://archive.org/download/anatomyofhumanbo1918gray/anatomyofhumanbo1918gray.pdf
+S|01 Medicine/Hesperian (chapters)|https://languages.hesperian.org/pages/en/pdf.html|href="[^"]*\.pdf"
+S|01 Medicine/Ship Captains Medical Guide|https://www.gov.uk/government/publications/the-ship-captains-medical-guide|href="[^"]*\.pdf"
+F|01 Medicine|Where_There_Is_No_Animal_Doctor_CVM.pdf|https://assets-global.echocommunity.org/publicationissues/2ccd7034-97e1-4544-9cc8-2cd136ad43f7/en/en_where-there-is-no_print.pdf
+F|02 Water & Sanitation|WHO_Guidelines_Drinking_Water_Quality_2026.pdf|https://iris.who.int/server/api/core/bitstreams/c60cc28e-defe-45ed-b157-71fdd43902bf/content
+F|02 Water & Sanitation|Emergency_Sanitation_WEDC.pdf|https://wedc-knowledge.lboro.ac.uk/resources/books/Emergency_Sanitation_-_Complete.pdf
+F|02 Water & Sanitation|Wells_Hand_Dug_and_Hand_Drilled_PeaceCorps.pdf|https://files.peacecorps.gov/documents/M0009_Wells-Construction-Hand-Dug-And-Hand-Drilled.pdf
+F|02 Water & Sanitation|Texas_Rainwater_Harvesting_Manual.pdf|https://www.twdb.texas.gov/publications/brochures/conservation/doc/RainwaterHarvestingManual_3rdedition.pdf
+F|02 Water & Sanitation|FAO_Manual_on_Small_Earth_Dams.pdf|https://fao.org/4/i1531e/i1531e00.pdf
+F|02 Water & Sanitation|USBR_Design_of_Small_Dams.pdf|https://www.usbr.gov/tsc/techreferences/mands/mands-pdfs/SmallDams.pdf
+F|02 Water & Sanitation|USBR_Water_Measurement_Manual.pdf|https://www.usbr.gov/tsc/techreferences/mands/wmm/WMM_3rd_2001.pdf
+S|02 Water & Sanitation/Humanure Handbook|https://humanurehandbook.com/contents.html|href="[^"]*\.pdf"
+F|03 Agriculture & Animals|Building_Soils_for_Better_Crops_SARE.pdf|https://www.sare.org/media/pdf/B/u/i/Building-Soils-for-Better-Crops.pdf
+F|03 Agriculture & Animals|FAO_On_Farm_Composting_Methods.pdf|https://smallfarms.oregonstate.edu/sites/agscid7/files/on_farm_comp_methods.pdf
+F|03 Agriculture & Animals|FAO_Fertilizer_Use_by_Crop.pdf|https://www.fao.org/4/a0787e/a0787e00.pdf
+F|03 Agriculture & Animals|PeaceCorps_Soil_Water_Conservation_Small_Farms.pdf|https://files.peacecorps.gov/documents/R0084-Soil-Water-Conservation-Small-Farm-Development-Tropics.pdf
+F|03 Agriculture & Animals|Seed_Saving_Guidelines_Garden_Organic.pdf|https://garden-organic.files.svdcdn.com/production/documents/HSL-Seed-Saving-Guidelines.pdf
+S|03 Agriculture & Animals/Seed Saving per crop|https://www.gardenorganic.org.uk/expert-advice/garden-management/seed-saving/seed-saving-guidelines|href="[^"]*\.pdf[^"]*"
+F|03 Agriculture & Animals|FAO_Seeds_in_Emergencies.pdf|https://www.agro.biodiver.se/wp-content/uploads/2012/02/Seeds_in_Emergencies.pdf
+F|03 Agriculture & Animals|ECHO_Community_Seed_Bank_Options.pdf|https://assets-global.echocommunity.org/books/5ab37a2d-5484-4232-b48c-24d256dc0adc/en/en_community-seed-ba_print.pdf
+F|03 Agriculture & Animals|FAO_Bees_and_Forest_Livelihoods.pdf|https://www.fao.org/docrep/pdf/012/i0842e/i0842e00.pdf
+F|03 Agriculture & Animals/Agrodok|Agrodok_002_Soil_Fertility.pdf|https://assets-global.echocommunity.org/publicationissues/83551bbc-7688-4f72-a099-f98fdfac678f/en/en_agrodok-002-soil_print.pdf
+F|03 Agriculture & Animals/Agrodok|Agrodok_015_Freshwater_Fish_Farming.pdf|https://assets-global.echocommunity.org/publicationissues/773885b1-58ba-49f9-ac5a-c96e84fc93bb/en/en_agrodok-015-smal_print.pdf
+S|04 Food Preservation/USDA Home Canning Guide|https://nchfp.uga.edu/resources/entry/about-the-usda-guide-to-home-canning-2015-revision|href="[^"]*GUIDE[^"]*\.pdf"
+F|04 Food Preservation|FAO_Home_Fruit_Vegetable_Processing.pdf|https://www.fao.org/4/a1549e/a1549e00.pdf
+F|04 Food Preservation|Drying_Project_Manual_PNW651.pdf|https://objects.lib.uidaho.edu/uiext/uiext32185.pdf
+F|04 Food Preservation|Improved_Fish_Smoking_BOBP.pdf|https://www.fao.org/fishery/docs/CDrom/bobp/cd1/Bobp/Publns/INFORMATION%20BULLETIN/0014.pdf
+F|04 Food Preservation|Curing_Pork_at_Home_MSU.pdf|https://extension.msstate.edu/sites/default/files/publications/P2648_web.pdf
+F|04 Food Preservation|Dry_Curing_Ham_at_Home_VT.pdf|https://www.pubs.ext.vt.edu/content/dam/pubs_ext_vt_edu/458/458-223/FST-513.pdf
+F|04 Food Preservation|Country_Cured_Ham_UGA.pdf|https://secure.caes.uga.edu/extension/publications/files/pdf/B%201526_1.PDF
+F|04 Food Preservation|Wild_Edible_Plants_MSU.pdf|https://extension.msstate.edu/sites/default/files/document/2026-02/P4173_web.pdf
+F|04 Food Preservation|Wild_Foods_Forager_Tips.pdf|https://static.csbsju.edu/documents/Herbarium/Publications/edible%20wild%20plants%20Jan%202019.pdf
+F|05 Survival & Emergency|ATP3-50.21_Survival_2018.pdf|https://irp.fas.org/doddir/army/atp3-50-21.pdf
+F|05 Survival & Emergency|FM21-76_Survival_1957.pdf|https://archive.org/download/FM21-76Survival1957/FM21-76Survival1957.pdf
+F|05 Survival & Emergency|FM3-25.26_Map_Reading_Land_Navigation_2001.pdf|https://archive.org/download/MManuals/Fm3-25.26MapReadingAndLandNavigation.pdf
+F|05 Survival & Emergency|FEMA_CERT_Basic_Participant_Manual.pdf|https://www.govinfo.gov/content/pkg/GOVPUB-HS5_100-PURL-gpo185734/pdf/GOVPUB-HS5_100-PURL-gpo185734.pdf
+F|06 Carpentry & Construction|FM5-426_Carpentry.pdf|https://archive.org/download/MManuals/UsArmyEngineerCarpentry1995.pdf
+F|06 Carpentry & Construction|NAVEDTRA_14043A_Builder_Basic.pdf|https://media.defense.gov/2014/Jun/20/2002655876/-1/-1/1/140620-N-ZZ182-6520.pdf
+F|06 Carpentry & Construction|FM5-428_Concrete_and_Masonry.pdf|https://vulcanhammer.net/wp-content/uploads/2017/01/fm5_428.pdf
+F|06 Carpentry & Construction|Wood_Handbook_FPL-GTR-282.pdf|https://research.fs.usda.gov/download/treesearch/62200.pdf
+F|06 Carpentry & Construction|FM5-125_Rigging_Techniques.pdf|https://www.marines.mil/Portals/1/MCRP%203-17.7J%20With%20Ch.%201%20z.pdf
+F|06 Carpentry & Construction|Village_Technology_Handbook_VITA.pdf|https://api.echocommunity.org/pdf/en/80cc041a-13cd-4406-85c6-4c459b5e20ab/village-technology-handbook.pdf
+F|07 Metalworking|NAVEDTRA_14250A_Steelworker_Basic.pdf|https://media.defense.gov/2014/Jun/20/2002655935/-1/-1/1/140620-N-ZZ182-6575.pdf
+F|07 Metalworking|TC9-237_Welding_Theory_and_Application.pdf|https://asktop.net/wp/download/5/TC9_237.pdf
+F|07 Metalworking|TM9-2852_Welding_1943.pdf|https://archive.org/download/TM9-2852/TM9-2852.pdf
+F|07 Metalworking|Practical_Blacksmithing_Vol1_1889.pdf|https://archive.org/download/practicalblacksm01richuoft/practicalblacksm01richuoft.pdf
+F|07 Metalworking|Forge_Work_Ilgen.epub|https://www.gutenberg.org/ebooks/53854.epub3.images
+F|07 Metalworking|Practical_Forging_and_Art_Smithing_Googerty.epub|https://www.gutenberg.org/ebooks/69488.epub3.images
+F|07 Metalworking|American_Foundry_Practice_1893.pdf|https://archive.org/download/americanfoundryp00westuoft/americanfoundryp00westuoft_bw.pdf
+F|07 Metalworking|Elementary_Foundry_Practice_1910.pdf|https://archive.org/download/textbookofelemen00rich/textbookofelemen00rich.pdf
+S|08 Electrical & Energy/Lessons in Electric Circuits|https://ibiblio.org/kuphaldt/electricCircuits/DC/index.html|href="[^"]*\.pdf"
+S|08 Electrical & Energy/Lessons in Electric Circuits|https://ibiblio.org/kuphaldt/electricCircuits/AC/index.html|href="[^"]*\.pdf"
+S|08 Electrical & Energy/Lessons in Electric Circuits|https://ibiblio.org/kuphaldt/electricCircuits/Semi/index.html|href="[^"]*\.pdf"
+S|08 Electrical & Energy/Lessons in Electric Circuits|https://ibiblio.org/kuphaldt/electricCircuits/Digital/index.html|href="[^"]*\.pdf"
+S|08 Electrical & Energy/Lessons in Electric Circuits|https://ibiblio.org/kuphaldt/electricCircuits/Ref/index.html|href="[^"]*\.pdf"
+S|08 Electrical & Energy/Lessons in Electric Circuits|https://ibiblio.org/kuphaldt/electricCircuits/Exper/index.html|href="[^"]*\.pdf"
+A|08 Electrical & Energy/NEETS Navy Electronics|NEETSModules
+F|08 Electrical & Energy|Off_Grid_PV_System_Design_Guidelines_SEIAPI.pdf|https://policy.asiapacificenergy.org/sites/default/files/Off%20Grid%20PV%20Power%20Systems-%20System%20Design%20Guidelines%20for%20the%20Pacific%20Islands.pdf
+F|08 Electrical & Energy|Intro_to_Micro-Hydropower_NRCan.pdf|https://ressources-naturelles.canada.ca/sites/nrcan/files/canmetenergy/files/pubs/Intro_MicroHydro_ENG.pdf
+F|08 Electrical & Energy|ESHA_Guide_Small_Hydropower_Plant.pdf|https://canyonhydro.com/images/Part_1_ESHA_Guide_on_how_to_develop_a_small_hydropower_plant.pdf
+F|08 Electrical & Energy|Solar_Cookers_How_to_Make_Use.pdf|https://www.solarcookers.org/files/7914/5687/8521/How_to_make_use_understand_English_Update.pdf
+F|08 Electrical & Energy|Biogas_Digest_Vol2.pdf|https://biogas.ifas.ufl.edu/ad_development/documents/biogasdigestvol2.pdf
+F|08 Electrical & Energy|Biogas_Digest_Vol1.pdf|https://susana.org/downloads?documentID=454
+S|08 Electrical & Energy/Biogas Construction Manual|https://energypedia.info/wiki/File:EN_KENBIM_domestic_biogas_construction_training_Kenya_2009.pdf|href="/images/[^"]*\.pdf"
+A|09 Communications & Radio|FM_24-18_Tactical_Single_Channel_Radio_Communications_Techniques
+F|09 Communications & Radio|TM11-666_Antennas_and_Radio_Propagation.pdf|https://radionerds.com/images/a/aa/TM_11-666.pdf
+F|09 Communications & Radio|TM11-314_Antennas_and_Antenna_Systems.pdf|https://radionerds.com/images/6/64/TM_11-314.pdf
+F|09 Communications & Radio|MCRP6-22D_Field_Antenna_Handbook.pdf|https://radionerds.com/images/a/ac/MCRP_6-22D.pdf
+F|09 Communications & Radio|FM6-02.53_Tactical_Radio_Operations.pdf|https://radionerds.com/images/2/20/FM_6-02.53.pdf
+F|09 Communications & Radio|KB6NU_No-Nonsense_Technician_Study_Guide_2026.pdf|https://www.kb6nu.com/wp-content/uploads/2026/09/2026-no-nonsense-tech-study-guide-v2-pdf.pdf
+A|09 Communications & Radio|art-and-skill-of-radio-telegraphy
+F|10 K-12 Education/McGuffey Readers|McGuffey_Primer.epub|https://www.gutenberg.org/ebooks/14642.epub3.images
+F|10 K-12 Education/McGuffey Readers|McGuffey_1st_Reader.pdf|https://www.gutenberg.org/files/14640/14640-pdf.pdf
+F|10 K-12 Education/McGuffey Readers|McGuffey_2nd_Reader.epub|https://www.gutenberg.org/ebooks/14668.epub3.images
+F|10 K-12 Education/McGuffey Readers|McGuffey_3rd_Reader.pdf|https://www.gutenberg.org/files/14766/14766-pdf.pdf
+F|10 K-12 Education/McGuffey Readers|McGuffey_4th_Reader.pdf|https://www.gutenberg.org/files/14880/14880-pdf.pdf
+F|10 K-12 Education/McGuffey Readers|McGuffey_5th_Reader.epub|https://www.gutenberg.org/ebooks/15040.epub3.images
+F|10 K-12 Education/McGuffey Readers|McGuffey_6th_Reader.epub|https://www.gutenberg.org/ebooks/16751.epub3.images
+F|10 K-12 Education/Rays Arithmetic|1_Rays_New_Primary_Arithmetic.pdf|https://archive.org/download/raysnewprimarya00raygoog/raysnewprimarya00raygoog.pdf
+F|10 K-12 Education/Rays Arithmetic|2_Rays_New_Intellectual_Arithmetic.pdf|https://archive.org/download/raysnewintellect00rayjrich/raysnewintellect00rayjrich.pdf
+F|10 K-12 Education/Rays Arithmetic|3_Rays_New_Practical_Arithmetic.pdf|https://archive.org/download/raysnewpractical00rayjrich/raysnewpractical00rayjrich.pdf
+F|10 K-12 Education/Rays Arithmetic|4_Rays_Higher_Arithmetic.pdf|https://archive.org/download/rayshigherarithm00rayj/rayshigherarithm00rayj.pdf
+F|11 Math & Science|OpenStax_Physics_High_School.pdf|https://assets.openstax.org/oscms-prodcms/media/documents/Physics-WEB_Sab7RrQ.pdf
+F|11 Math & Science|OpenStax_HS_Physics_Lab_Manual.pdf|https://assets.openstax.org/oscms-prodcms/media/documents/STUDENT_HS_Physics_Lab_Manual_Full.pdf
+F|11 Math & Science|OpenStax_University_Physics_Vol1.pdf|https://d3bxy9euw4e147.cloudfront.net/oscms-prodcms/media/documents/UniversityPhysicsVolume1-LR.pdf
+F|11 Math & Science|OpenStax_Calculus_Vol3.pdf|https://d3bxy9euw4e147.cloudfront.net/oscms-prodcms/media/documents/CalculusVolume3-LR.pdf
+F|11 Math & Science|Calculus_Made_Easy.pdf|https://www.gutenberg.org/files/33283/33283-pdf.pdf
+F|11 Math & Science|Engineering_Statics.pdf|https://engineeringstatics.org/pdf/statics.pdf
+F|11 Math & Science|Henleys_Twentieth_Century_Formulas.pdf|https://archive.org/download/henleystwentieth00hiscrich/henleystwentieth00hiscrich.pdf
+F|12 Computer Science|OpenStax_Intro_to_Python_Programming.pdf|https://assets.openstax.org/oscms-prodcms/media/documents/Introduction_to_Python_Programming-WEB.pdf
+F|12 Computer Science|The_Linux_Command_Line_Shotts.pdf|https://sourceforge.net/projects/linuxcommand/files/TLCL/25.12/TLCL-25.12A.pdf/download
+F|12 Computer Science|Think_Python_2e.pdf|https://greenteapress.com/thinkpython2/thinkpython2.pdf
+F|12 Computer Science|SICP.pdf|https://github.com/sarabander/sicp-pdf/raw/master/sicp.pdf
+S|12 Computer Science/OSTEP Operating Systems|https://research.cs.wisc.edu/wind/OSTEP/|href="[^"]*\.pdf"
+F|13 English & Literacy|Elements_of_Style_Strunk_1918.epub|https://www.gutenberg.org/ebooks/37134.epub3.images
+F|13 English & Literacy|Websters_Unabridged_Dictionary_1913.epub|https://www.gutenberg.org/ebooks/29765.epub3.images
+F|14 Community & Governance|Sphere_Handbook_2018_EN.pdf|https://sphere-standards-media.s3.eu-central-1.amazonaws.com/app/uploads/2026/07/02150526/Sphere-Handbook-2018-EN.pdf
+F|14 Community & Governance|Sphere_Handbook_2018_RO.pdf|https://sphere-standards-media.s3.eu-central-1.amazonaws.com/app/uploads/2026/09/08160421/Sphere-Handbook-2018-Romanian.pdf
+F|14 Community & Governance|Consensus_Handbook_Seeds_for_Change.pdf|https://www.seedsforchange.org.uk/downloads/handbookweb.pdf
+F|14 Community & Governance|Consensus_Short_Guide.pdf|https://www.seedsforchange.org.uk/downloads/shortconsensus.pdf
+F|14 Community & Governance|USDA_How_to_Start_a_Cooperative.pdf|https://www.rd.usda.gov/files/publications/CIR7%20How%20to%20Start%20a%20Cooperative%202015.pdf
+
+# ---- Added 2026-10-16: more carpentry, masonry, metalworking (metric where possible) ----
+# Carpentry & wood
+F|06 Carpentry & Construction/Carpentry & Wood|Timber_in_Humanitarian_Construction_OCHA_IFRC_CARE_2009.pdf|https://mail.shelterprojects.org/files/UNOCHA-IFRC-CARE-Timber-23-03-09.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Low_Cost_Prefabricated_Wooden_Houses_UNIDO.pdf|https://downloads.unido.org/ot/49/90/4990548/15001-20000_19561.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Production_of_Joinery_Doors_Windows_Stairs_UNIDO.pdf|https://downloads.unido.org/ot/46/83/4683502/00001-10000_00716D.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Hand_Tools_BCcampus_C1.pdf|https://yc-prod-openlibrary-repo.ecampusontario.ca/jspui/bitstream/123456789/317/5/C1.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Power_Tools_BCcampus_C2.pdf|https://yc-prod-openlibrary-repo.ecampusontario.ca/jspui/bitstream/123456789/280/5/C2.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Small_and_Medium_Sawmills_FAO.pdf|https://www.fao.org/docrep/015/an773e/an773e00.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Chainsaw_Milling_Handbook_Tropenbos_2015.pdf|https://www.tropenbos.org/app/data/uploads/sites/2/Handbook-Guyana-2015-17june2015-web-1.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Timber_Drying_Manual_BRE_1974.pdf|https://library.uniteddiversity.coop/Ecological_Building/Timber_Drying_Manual.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Wood_Preservation_Manual_FAO.pdf|https://www.fao.org/docrep/015/an800e/an800e00.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Basic_Wood_Harvesting_Tools_Design_Manual_FAO.pdf|https://www.fao.org/3/t0129e/t0129e.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Sawdoctoring_Techniques_UNIDO.pdf|https://downloads.unido.org/ot/48/08/4808461/20001-_21772.PDF
+F|06 Carpentry & Construction/Carpentry & Wood|Transitional_Shelters_Eight_Designs_IFRC.pdf|https://mail.shelterprojects.org/files/8transitionalshelters.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Design_of_Timber_Structures_Vol1_Swedish_Wood_2022.pdf|https://www.swedishwood.com/siteassets/5-publikationer/pdfer/sw-design-of-timber-structures-vol1-2022.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Design_of_Timber_Structures_Vol2_Swedish_Wood_2022.pdf|https://www.swedishwood.com/siteassets/5-publikationer/pdfer/sw-design-of-timber-structures-vol2-2022.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Design_of_Timber_Structures_Vol3_Swedish_Wood_2022.pdf|https://www.swedishwood.com/siteassets/5-publikationer/pdfer/sw-design-of-timber-structures-vol3-2022.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Woodwork_Joints_Fairham_1921.pdf|https://archive.org/download/woodworkjointsho00fair/woodworkjointsho00fair.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Cabinetwork_and_Joinery_Hasluck_1907.pdf|https://archive.org/download/cihm_75062/cihm_75062.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Cassells_Carpentry_and_Joinery_Hasluck_1907.pdf|https://archive.org/download/cassellscarpentr00hasl/cassellscarpentr00hasl.pdf
+F|06 Carpentry & Construction/Carpentry & Wood|Small_Sawmill_Operators_Manual_USDA_1952.pdf|https://www.govinfo.gov/content/pkg/GOVPUB-A-PURL-gpo17291/pdf/GOVPUB-A-PURL-gpo17291.pdf
+# Masonry, concrete & earth building
+F|06 Carpentry & Construction/Masonry & Earth Building|ILO_Training_Rural_Masons_LU1_Basics.pdf|https://researchrepository.ilo.org/view/pdfCoverPage?instCode=41ILO_INST&filePid=13100908410002676&download=true
+F|06 Carpentry & Construction/Masonry & Earth Building|ILO_Training_Rural_Masons_LU2_Setting_Out.pdf|https://researchrepository.ilo.org/view/pdfCoverPage?instCode=41ILO_INST&filePid=13100795660002676&download=true
+F|06 Carpentry & Construction/Masonry & Earth Building|ILO_Training_Rural_Masons_LU3_Masonry.pdf|https://researchrepository.ilo.org/view/pdfCoverPage?instCode=41ILO_INST&filePid=13100820110002676&download=true
+F|06 Carpentry & Construction/Masonry & Earth Building|ILO_Training_Rural_Masons_LU4_Concrete.pdf|https://researchrepository.ilo.org/view/pdfCoverPage?instCode=41ILO_INST&filePid=13100848970002676&download=true
+F|06 Carpentry & Construction/Masonry & Earth Building|Rural_Structures_in_the_Tropics_FAO_2011.pdf|https://fao.org/4/i2433e/i2433e.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Confined_Masonry_Seismic_Design_Guide_EERI.pdf|https://www.world-housing.net/wp-content/uploads/2011/08/ConfinedMasonryDesignGuide82011.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Stone_Masonry_Seismic_Tutorial_EERI.pdf|https://world-housing.net/wp-content/uploads/2011/06/Stone_Masonry_English.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Adobe_Earthquake_Resistant_Tutorial_EERI.pdf|https://www.world-housing.net/wp-content/uploads/2011/06/Adobe_Tutorial_English_Blondet.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Hazard_Resistant_Construction_Manual_India_UNDP.pdf|https://onlineasdma.assam.gov.in/pdf/publication/undp/manual_hazard_resistant_construction_in_india.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Earthquake_Resistant_Houses_Handbook_Nepal_JICA.pdf|https://mitigation.eeri.org/wp-content/uploads/160622_handbook_craftsman__english.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Nepal_NBC203_Low_Strength_Masonry.pdf|https://www.sheltercluster.org/sites/default/files/docs/guidelines_for_earthquake_resistant_building_construction_low_strength_masonry.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|UNESCO_IAEE_Non_Engineered_Construction_2014.pdf|https://iisee.kenken.go.jp/net/members/iaee/NonEngMainA4E130619.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Village_Level_Brickmaking_GATE_GTZ.pdf|https://dev.humanitarianlibrary.org/sites/default/files/2014/02/GATE_villageLevelBrickmaking.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Concrete_Basics_CCAA.pdf|https://secure.resene.co.nz/webinar-resources/011/concrete-basics-guide-to-concrete-practice.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Earthbag_Options_for_Nepal.pdf|https://earthbagbuilding.com/pdf/EB%20Options%20for%20Nepal.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Earthquakes_Manual_for_Designers_Builders_NSET.pdf|https://www.nset.org.np/nset2012/images/publicationfile/20110816230617.pdf
+F|06 Carpentry & Construction/Masonry & Earth Building|Treatise_on_Masonry_Construction_Baker_1902.pdf|https://archive.org/download/treatiseonmasonr00bake/treatiseonmasonr00bake.pdf
+# Metalworking - GTZ/IBE metric vocational course (CD3WD mirror)
+F|07 Metalworking/GTZ Metric Course|01_Measuring_and_Testing.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_measuring_testing_gtz062ae_en_140430_.pdf
+F|07 Metalworking/GTZ Metric Course|02_Marking_and_Punch_Marking.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_marking_gtz063ce_en_140400_.pdf
+F|07 Metalworking/GTZ Metric Course|03_Manual_Sawing.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_manual_sawing_gtz065ce_en_140360_.pdf
+F|07 Metalworking/GTZ Metric Course|04_Filing.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_filing_gtz066ce_en_139550_.pdf
+F|07 Metalworking/GTZ Metric Course|05_Drilling_Countersinking.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_drilling_countersinking_gtz068ce_en_139470_.pdf
+F|07 Metalworking/GTZ Metric Course|06_Manual_Reaming.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_manual_reaming_gtz069ce_en_140310_.pdf
+F|07 Metalworking/GTZ Metric Course|07_Manual_Thread_Cutting.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_threading_manual_gtz070ce_en_141330_.pdf
+F|07 Metalworking/GTZ Metric Course|08_Chipping.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_chipping_gtz071ce_en_139430_.pdf
+F|07 Metalworking/GTZ Metric Course|09_Riveting.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_rivetting_gtz072be_en_140900_.pdf
+F|07 Metalworking/GTZ Metric Course|10_Sheet_Metal_Bending.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_bending_gtz075ce_en_139370_.pdf
+F|07 Metalworking/GTZ Metric Course|11_Sheet_Metal_Shearing.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_shearing_ibe_en_lp_141140_.pdf
+F|07 Metalworking/GTZ Metric Course|12_Annealing_Hardening_Tempering.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_annealing_hardening_tempering_gtz077ce_en_139320_.pdf
+F|07 Metalworking/GTZ Metric Course|13_Materials_Science_for_Metalworking.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_material_science_h3551e_en_140420_.pdf
+F|07 Metalworking/GTZ Metric Course|14_Lathe_Setting_Up_and_Operating.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_lathes_gtz097be_en_140170_.pdf
+F|07 Metalworking/GTZ Metric Course|15_Lathe_Recessing_Cutting_Off.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_lathes_gtz100ae_en_140180_.pdf
+F|07 Metalworking/GTZ Metric Course|16_Lathe_Centring_Drilling_Counterboring.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_lathe_centering_drilling_counterboring_ibe_en_lp_140130_.pdf
+F|07 Metalworking/GTZ Metric Course|17_Lathe_Turning_Techniques.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_lathe_turning_ibe_en_lp_140150_.pdf
+F|07 Metalworking/GTZ Metric Course|18_Electric_Welding_1.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_welding_h3564e_en_141420_.pdf
+F|07 Metalworking/GTZ Metric Course|19_Electric_Welding_4.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_welding_h3589e_en_141450_.pdf
+F|07 Metalworking/GTZ Metric Course|20_Gas_Metal_Arc_CO2_Welding.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_welding_h4301e_en_141460_.pdf
+F|07 Metalworking/GTZ Metric Course|21_TIG_Welding.pdf|https://ftpmirror.your.org/pub/misc/cd3wd/1003/_me_welding_TIG_s3198e_en_141480_.pdf
+# Metalworking - blacksmithing, heat treatment, smelting
+F|07 Metalworking|Intermediate_Blacksmithing_FAO_1992.pdf|https://archive.org/download/bub_gb_uJvu_qnUKFsC/bub_gb_uJvu_qnUKFsC.pdf
+F|07 Metalworking|Advanced_Blacksmithing_FAO_1992.pdf|https://archive.org/download/agricultural-engineering-advanced-blacksmithing/Agricultural%20engineering%20Advanced%20blacksmithing.pdf
+F|07 Metalworking|Hardening_and_Tempering_of_Steel_Reiser_1903.pdf|https://archive.org/download/hardeningtemperi00reisrich/hardeningtemperi00reisrich.pdf
+F|07 Metalworking|Bloomery_Iron_Smelting_and_Smithing_Sauder_Williams.pdf|https://hmsjournal.org/index.php/home/article/download/268/257
+F|07 Metalworking|Bloomery_Furnace_Iron_Smelting_Metz_Bohr.pdf|https://donwagner.dk/arch-iron/resources/Rom_Bohr_Bloomery.pdf
+F|07 Metalworking|Blacksmithing_Practical_Action.pdf|https://rachel.core2learn.org/modules/en-practical_action/Manufacturing,%20handicraft,%20process%20industries/Metalworking/KnO-100340_Blacksmithing.pdf
+F|07 Metalworking|Metalworking_Practical_Action.pdf|https://rachel.core2learn.org/modules/en-practical_action/Manufacturing,%20handicraft,%20process%20industries/Metalworking/KnO-100350_Metalworking.pdf
+F|07 Metalworking|Iron_Foundry_Basics_Practical_Action.pdf|https://samplecontents.library.ph/en-practical_action/Manufacturing,%20handicraft,%20process%20industries/Metalworking/Iron%20Foundry.pdf
+F|07 Metalworking|TC9-524_Fundamentals_of_Machine_Tools_US_Army.pdf|https://archive.org/download/tc9-524_202010/tc9_524.pdf
+F|07 Metalworking|Heat_Treatment_of_Iron_and_Steel_NBS_Monograph_88.pdf|https://maritime.org/doc/pdf/heat-treatment-steel.pdf
+
+# ---- Added 2026-10-18: engines, vehicles, tractors ----
+# Engines (petrol & diesel, 2-stroke & 4-stroke)
+F|17 Engines & Vehicles|TM9-8000_Principles_of_Automotive_Vehicles_US_Army_1985.pdf|https://archive.org/download/tm-9-8000-principles-of-automotive-vehicles-1985/TM9-8000_Principles_of_automotive_vehicles_1985.pdf
+F|17 Engines & Vehicles/Engines|GTZ_Diesel_and_Petrol_Engines_Theory_Module_2.3a.pdf|https://fr.ircwash.org/sites/default/files/262.0-8132-v.pdf
+F|17 Engines & Vehicles/Engines|GTZ_Diesel_and_Petrol_Engines_Maintenance_Module_3.3a.pdf|https://fr.ircwash.org/sites/default/files/262.0-8132-d.pdf
+F|17 Engines & Vehicles/Engines|Mechanic_Diesel_Trade_Theory_NIMI_2024.pdf|https://bharatskills.gov.in/pdf/E_Books/CITS/147/English/Mechanic%20Diesel%20(Trade%20Theory).pdf
+F|17 Engines & Vehicles/Engines|Mechanic_Two_and_Three_Wheeler_Trade_Practical_NIMI_2022.pdf|https://nimilearningonline.in/freepdfs/MECHANIC%20TWO%20AND%20THREE%20WHEELER/Mechanic%20Two%20and%20Three%20Wheeler%20-%20TP%20-%20English%20-%20(2022).pdf
+F|17 Engines & Vehicles/Engines|Small_Engine_Repair_Two_and_Four_Stroke_MAVCC_1985.pdf|https://files.eric.ed.gov/fulltext/ED271558.pdf
+F|17 Engines & Vehicles/Engines|Engine_Principles_ED216180.pdf|https://files.eric.ed.gov/fulltext/ED216180.pdf
+F|17 Engines & Vehicles/Engines|Principles_of_Fuel_and_Fuel_Systems_ED223906.pdf|https://files.eric.ed.gov/fulltext/ED223906.pdf
+F|17 Engines & Vehicles/Engines|Engine_Tune_Up_I_Petrol_ED223904.pdf|https://files.eric.ed.gov/fulltext/ED223904.pdf
+F|17 Engines & Vehicles/Engines|Engine_Tune_Up_II_Diesel_ED223905.pdf|https://files.eric.ed.gov/fulltext/ED223905.pdf
+F|17 Engines & Vehicles/Engines|Automotive_Engine_Maintenance_and_Repair_ED224894.pdf|https://files.eric.ed.gov/fulltext/ED224894.pdf
+F|17 Engines & Vehicles/Engines|Basic_Principles_of_Diesel_Engines_ED223901.pdf|https://files.eric.ed.gov/fulltext/ED223901.pdf
+F|17 Engines & Vehicles/Engines|Construction_Mechanic_Basic_NAVEDTRA_14264A_ch1-2_Engines.pdf|https://media.defense.gov/2014/Jun/20/2002655894/-1/-1/1/140620-N-ZZ182-6544.pdf
+F|17 Engines & Vehicles/Engines|Construction_Mechanic_Basic_NAVEDTRA_14264A_ch5_Diesel_Fuel.pdf|https://media.defense.gov/2014/Jun/20/2002655897/-1/-1/1/140620-N-ZZ182-6546.pdf
+F|17 Engines & Vehicles/Engines|Construction_Mechanic_3_and_2_US_Navy_1978.pdf|https://archive.org/download/ERIC_ED170540/ERIC_ED170540.pdf
+F|17 Engines & Vehicles/Engines|Construction_Mechanic_1_and_C_US_Navy_1982.pdf|https://files.eric.ed.gov/fulltext/ED219598.pdf
+F|17 Engines & Vehicles/Engines|Construction_Mechanic_Part_I_ED223902.pdf|https://files.eric.ed.gov/fulltext/ED223902.pdf
+F|17 Engines & Vehicles/Engines|Construction_Mechanic_Part_II_ED223903.pdf|https://files.eric.ed.gov/fulltext/ED223903.pdf
+F|17 Engines & Vehicles/Engines|Engineman_3_and_2_US_Navy_1979_Diesel.pdf|https://archive.org/download/ERIC_ED178727/ERIC_ED178727.pdf
+F|17 Engines & Vehicles/Engines|Diesel_Engine_Maintenance_Training_Manual_US_Navy_1946.pdf|https://archive.org/download/DieselEngineMaintenance/DieselEngineMaintenance.pdf
+F|17 Engines & Vehicles/Engines|Diesel_Engine_Repair_Practical_Action.pdf|https://kolibri.teacherinabox.org.au/modules/en-practical_action/Energy/Fuels%20and%20engines/Diesel_engine_repair_2008.pdf
+F|17 Engines & Vehicles/Engines|Dykes_Automobile_and_Gasoline_Engine_Encyclopedia_1920.pdf|https://archive.org/download/dykesautomobile00dykegoog/dykesautomobile00dykegoog.pdf
+# Cars, trucks & light vehicles
+F|17 Engines & Vehicles/Cars & Trucks|Automotive_Service_Technician_Class_XI_NCERT.pdf|https://psscive.ac.in/storage/uploads/textbooks/pdf/english/four-wheeler-service-technician-english-11.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Four_Wheeler_Service_Technician_Class_XII_PSSCIVE.pdf|https://www.psscive.ac.in/storage/uploads/textbooks/pdf/english/four-wheeler-service-technician-old-auto-service-technician-l4-english-class-%2012.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Guide_to_Maintaining_Roadworthiness_UK_DVSA_2025.pdf|https://assets.publishing.service.gov.uk/media/6824a454b9226dd8e81ab890/guide-to-maintaining-roadworthiness-commercial-goods-and-public-service-vehicles.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Vehicle_Safety_Inspection_Checklist_DVSA.pdf|https://assets.publishing.service.gov.uk/media/669a5128ab418ab0555928eb/annex-4c-example-of-a-safety-inspection-record-LGV.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Vehicle_Maintenance_Planner_DVSA.pdf|https://assets.publishing.service.gov.uk/media/669a514a49b9c0597fdb0077/annex-6-specimen-maintenance-planner.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Construction_Mechanic_Basic_NAVEDTRA_14264A_ch10_Clutches_Transmissions.pdf|https://media.defense.gov/2014/Jun/20/2002655906/-1/-1/1/140620-N-ZZ182-6550.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Brake_Systems_Training_US_Army_2011.pdf|https://www.trngcmd.marines.mil/Portals/207/Docs/FLW/Brake%20Systems%20(TSP).pdf
+F|17 Engines & Vehicles/Cars & Trucks|Power_Train_Systems_Training_US_Army_2009.pdf|https://www.trngcmd.marines.mil/Portals/207/Docs/FLW/Power%20Trains%20(TSP).pdf
+F|17 Engines & Vehicles/Cars & Trucks|Principles_of_Automotive_Electricity_OD0611.pdf|https://softbank.iust.ac.ir/NewTechnologies/ebook/shahravi%20book/Solid%20%26%20Design/Us%20Army%20Mechanic%20Course%20-%20Principles%20Of%20Automotive%20Electricity%20Od0611.1.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Electrical_System_Component_Repair_OD0010.pdf|https://www.radionerds.com/images/c/c8/OD0010_Electrical_system_component_repair.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Equipment_Recovery_and_Battle_Damage_Repair_ATP4-31_2025.pdf|https://www.marines.mil/Portals/1/Publications/MCRP%203-40E.1%20(SECURED).pdf
+F|17 Engines & Vehicles/Cars & Trucks|Recovery_and_Battle_Damage_Repair_FM4-30.31.pdf|https://asktop.net/wp/download/21/FM%204-30.31.PDF
+F|17 Engines & Vehicles/Cars & Trucks|Vehicle_Recovery_Operations_FM20-22_1962.pdf|https://jatonkam35s.com/DeuceTechnicalManuals/FM20-22%20recovery%20operations.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Wheeled_Vehicle_Driver_FM21-305.pdf|https://jatonkam35s.com/DeuceTechnicalManuals/fm21-305.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Automotive_Brakes_TM10-565_1941.pdf|https://archive.org/download/TM10-565/TM10-565.pdf
+F|17 Engines & Vehicles/Cars & Trucks|Automotive_Electricity_TM10-580_1941.pdf|https://archive.org/download/TM10-580/TM10-580.pdf
+# Tractors & farm machinery
+F|17 Engines & Vehicles/Tractors & Farm Machinery|FAO_Farm_Machinery_Operation_Maintenance_Repair_2022.pdf|https://www.fao.org/3/cb9549en/cb9549en.pdf
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Two_Wheel_Tractor_Training_Manual_CIMMYT.pdf|https://cgspace.cgiar.org/bitstreams/7b817ca4-c0a9-4299-8551-12fd8b88bfd3/download
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Two_Wheel_Tractor_Repair_Maintenance_Manual_Zimbabwe_CIMMYT_2024.pdf|https://cgspace.cgiar.org/bitstreams/1e7e7e57-8fdf-4082-9659-9abccecceb3e/download
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Tractor_Preventive_Maintenance_IS6840.pdf|https://archive.org/download/gov.in.is.6840.1972/is.6840.1972.pdf
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Power_Tiller_Preventive_Maintenance_IS13064.pdf|https://law.resource.org/pub/in/bis/S06/is.13064.1991.pdf
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Mecaniciens_de_Tracteurs_Manuel_FR_2022.pdf|https://repository.cimmyt.org/server/api/core/bitstreams/12194d85-8876-4055-adae-fe304d7b179c/content
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Tractoristes_Professionnels_Manuel_FR_2022.pdf|https://cgspace.cgiar.org/server/api/core/bitstreams/31bb3f7d-707f-4b67-a23d-b99ecfae6f33/content
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Operation_Care_Repair_of_Farm_Machinery_John_Deere.pdf|https://archive.org/download/the_operation_care_and_repair_of_farm_machinery_25/the_operation_care_and_repair_of_farm_machinery_25_big_text.pdf
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Tractor_Operation_and_Safety_4H210_Nebraska.pdf|https://digitalcommons.unl.edu/cgi/viewcontent.cgi?article=1435&context=a4hhistory
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Tractor_Power_for_PTO_Driven_Pumps_MSU.pdf|https://archive.lib.msu.edu/DMC/extension_publications/e711/e711.pdf
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Using_Tractors_Safely_HSE_INDG185.pdf|https://www.hse.gov.uk/PUBNS/indg185.pdf
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Conservation_Agriculture_Small_Mechanization_CIMMYT_2020.pdf|https://cgspace.cgiar.org/server/api/core/bitstreams/c2845994-f30b-4686-a4c7-668f69f4579b/content
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Farm_Power_International_Harvester_1915.pdf|https://archive.org/download/farmpower00inte/farmpower00inte.pdf
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Tractor_Principles_Whitman_1920.epub|https://www.gutenberg.org/ebooks/67569.epub3.images
+F|17 Engines & Vehicles/Tractors & Farm Machinery|Farm_Mechanics_Shearer_1918.epub|https://archive.org/download/farmmechanicsmac39791gut/pg39791-images.epub
+
+# ---- Added 2026-10-18: electric motors (tools, appliances) and small electric vehicles ----
+F|18 Electric Motors & E-Vehicles|Electrician_2nd_Year_Trade_Theory_NIMI_2023_Motors_Winding_EV.pdf|https://bharatskills.gov.in/pdf/E_Books/CTS/118/English/TT/Electrician%20-%202nd%20Year%20-%20TT%20(2022).pdf
+F|18 Electric Motors & E-Vehicles|Electrician_2nd_Year_Trade_Practical_NIMI_2023.pdf|https://bharatskills.gov.in/pdf/E_Books/CTS/118/English/TP/Electrician%20-%202nd%20Year%20-%20TP%20(2022).pdf
+F|18 Electric Motors & E-Vehicles|Electrician_Trade_Theory_Sem3_NIMI_Rewinding_Universal_Motors.pdf|https://bharatskills.gov.in/pdf/E_Books/Electrician_SEM3_TT.pdf
+F|18 Electric Motors & E-Vehicles|Electric_Motor_Maintenance_TM5-683_NAVFAC_MO-116.pdf|https://stg.wbdg.org/NAVFAC/OPER/mo116.pdf
+F|18 Electric Motors & E-Vehicles|Motor_and_Drive_Systems_Sourcebook_US_DOE_2008.pdf|https://docs.nrel.gov/docs/fy08osti/39770.pdf
+F|18 Electric Motors & E-Vehicles|Armature_Winding_and_Motor_Repair_Braymer_1920.pdf|https://archive.org/download/armaturewindingm00brayrich/armaturewindingm00brayrich.pdf
+F|18 Electric Motors & E-Vehicles|Armature_Winding_Moreton_1926.pdf|https://archive.org/download/armaturewinding017151mbp/armaturewinding017151mbp.pdf
+F|18 Electric Motors & E-Vehicles|Brushless_DC_Motors_MIT_6.685_ch7.pdf|https://ocw.mit.edu/courses/6-685-electric-machines-fall-2013/c5edfb0f28f7c1b1b4d1588f179074c6_MIT6_685F13_chapter7.pdf
+F|18 Electric Motors & E-Vehicles/E-Bikes, Mopeds & Quads|Mechanic_Electric_Vehicle_2nd_Year_Trade_Practical_NIMI_2024.pdf|https://bharatskills.gov.in/pdf/E_Books/CTS/449/English/TP/MEV%20-%202nd%20Year%20-%20TP%20(2022).pdf
+F|18 Electric Motors & E-Vehicles/E-Bikes, Mopeds & Quads|EV_Service_Assistant_Grade9_PSSCIVE_Basics.pdf|https://psscive.ac.in/storage/uploads/textbooks/pdf/english/electric-vehicle-service-assistant-english-class-9.pdf
+F|18 Electric Motors & E-Vehicles/E-Bikes, Mopeds & Quads|EV_Service_Assistant_Grade10_PSSCIVE_2_3_Wheelers.pdf|https://psscive.ac.in/storage/uploads/textbooks/pdf/english/electric-vehicle-service-assistant-english-class-%2010.pdf
+F|18 Electric Motors & E-Vehicles/E-Bikes, Mopeds & Quads|Ebike_Basics_Guide_Grin.pdf|https://ebikes.ca/documents/Ebikes_Basics_Guide_Web.pdf
+F|18 Electric Motors & E-Vehicles/E-Bikes, Mopeds & Quads|Hall_Sensor_Testing_Grin.pdf|https://ebikes.ca/documents/HallSensorTestingFinal.pdf
+F|18 Electric Motors & E-Vehicles/E-Bikes, Mopeds & Quads|Blown_MOSFET_Controller_Test_Grin.pdf|https://ebikes.ca/documents/BlownMosfets.pdf
+F|18 Electric Motors & E-Vehicles/E-Bikes, Mopeds & Quads|Throttle_Testing_Grin.pdf|https://ebikes.ca/documents/ThrottleTesting.pdf
+F|18 Electric Motors & E-Vehicles/E-Bikes, Mopeds & Quads|Hub_Motor_Hall_Sensor_Replacement_Grin.pdf|https://ebikes.ca/documents/HubMotorHallSensorReplacement.pdf
+F|18 Electric Motors & E-Vehicles/E-Bikes, Mopeds & Quads|BMS_Replacement_Grin.pdf|https://ebikes.ca/documents/BMS_Replacement.pdf
+F|18 Electric Motors & E-Vehicles/E-Bikes, Mopeds & Quads|Li-ion_Battery_Storage_Safety_Guidelines_KIT_2014.pdf|https://www.batterietechnikum.kit.edu/downloads/Safety_Guidelines_Li-Ion_20150217(1).pdf

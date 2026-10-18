@@ -29,7 +29,7 @@ library-search-app/
   src/indexer/       walk + pdftotext/pdfinfo + EPUB reader + writer
   src/main/          Electron main + preload
   src/ui/            React app (index.html, main.tsx, components, styles.css)
-  kit/               6-*.sh / .desktop launchers + README section (copied to kit root)
+  kit/               download scripts 1-5, 6-* launchers, kit guide, booklists/ (all ship inside the app)
   scripts/           build, package, docker ia32 test, m0-check
   tests/             vitest unit/integration tests + fixtures
   index/             library.sqlite (gitignored)

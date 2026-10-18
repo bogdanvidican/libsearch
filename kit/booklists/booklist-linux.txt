@@ -1,0 +1,10 @@
+# Extra Linux / Ubuntu manuals - read only by 2-download-pdf-books.sh (same format as booklist-main.txt)
+F|16 Linux & Ubuntu|Introduction_to_Linux_Hands_on_Guide_TLDP.pdf|https://tldp.org/LDP/intro-linux/intro-linux.pdf
+F|16 Linux & Ubuntu|Bash_Guide_for_Beginners_TLDP.pdf|https://tldp.org/LDP/Bash-Beginners-Guide/Bash-Beginners-Guide.pdf
+F|16 Linux & Ubuntu|Advanced_Bash_Scripting_Guide_TLDP.pdf|https://tldp.org/LDP/abs/abs-guide.pdf
+F|16 Linux & Ubuntu|Linux_System_Administrators_Guide_TLDP.pdf|https://tldp.org/LDP/sag/sag.pdf
+F|16 Linux & Ubuntu|Linux_Network_Administrators_Guide_2e_TLDP.pdf|https://tldp.org/LDP/nag2/nag2.pdf
+F|16 Linux & Ubuntu|GNU_Linux_Command_Line_Tools_Summary_TLDP.pdf|https://tldp.org/LDP/GNU-Linux-Tools-Summary/GNU-Linux-Tools-Summary.pdf
+F|16 Linux & Ubuntu|Ubuntu_Server_Documentation.pdf|https://documentation.ubuntu.com/_/downloads/server/en/latest/pdf/
+F|16 Linux & Ubuntu|Debian_Administrators_Handbook.epub|https://debian-handbook.info/download/stable/debian-handbook.epub
+F|16 Linux & Ubuntu|The_Linux_Command_Line_Shotts.pdf|https://sourceforge.net/projects/linuxcommand/files/TLCL/25.12/TLCL-25.12A.pdf/download
