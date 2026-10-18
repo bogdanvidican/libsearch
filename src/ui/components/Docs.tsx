@@ -9,6 +9,7 @@ import {
   CircleCheck,
   Copy,
   Database,
+  Download,
   Flag,
   FolderOpen,
   Globe,
@@ -37,6 +38,7 @@ const ICONS: Record<DocIcon, typeof BookOpen> = {
   settings: Settings,
   help: LifeBuoy,
   files: HardDrive,
+  download: Download,
 };
 
 function routeFor(r: DocRoute): Route {
@@ -47,6 +49,8 @@ function routeFor(r: DocRoute): Route {
       return { name: 'library' };
     case 'settings':
       return { name: 'settings' };
+    case 'books':
+      return { name: 'books', tab: 'lists' };
     default:
       return { name: 'home' };
   }
@@ -238,6 +242,8 @@ function Block({ b, st }: { b: DocBlock; st: Status | null }) {
       return <ToolsNow st={st} />;
     case 'paths':
       return <PathsNow st={st} />;
+    case 'scripts':
+      return <ScriptsNow st={st} />;
     default:
       return null;
   }
@@ -323,6 +329,28 @@ function ToolsNow({ st }: { st: Status | null }) {
         );
       })}
     </ul>
+  );
+}
+
+/** The download scripts' commands with this computer's folders filled in (each with a Copy button). */
+function ScriptsNow({ st }: { st: Status | null }) {
+  if (!st || !st.kitDir) return <p className="docs__p">{S.docs.liveLoading}</p>;
+  const kit = st.kitDir.replace(/[\\/]+$/, '');
+  const lib = st.roots[0] || S.docs.scripts.yourLibrary;
+  const s = S.docs.scripts;
+  const rows: Array<[string, string]> = [
+    [s.cert, `sudo bash "${kit}/1-fix-https-certificates.sh"`],
+    [s.books, `bash "${kit}/2-download-pdf-books.sh" "${lib}"`],
+    [s.wiki, `bash "${kit}/3-download-offline-wikipedia.sh" "${lib}"`],
+    [s.khan, `bash "${kit}/4-download-khan-academy.sh" "${lib}"`],
+    [s.serve, `bash "${kit}/5-start-offline-library-in-firefox.sh" "${lib}"`],
+  ];
+  return (
+    <div className="docs__live">
+      {rows.map(([label, text]) => (
+        <Command key={text} label={label} text={text} />
+      ))}
+    </div>
   );
 }
 

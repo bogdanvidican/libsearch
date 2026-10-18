@@ -174,6 +174,7 @@ function status() {
     rootsSource: 'auto',
     rootInfo: [{ path: '/home/user/Ubuntu CF-30 Kit', exists: true, categories: 16, zims: 9 }],
     dataDir: '/home/user/Ubuntu CF-30 Kit/library-search-app',
+    kitDir: '/home/you/library-search/dist/library-search-linux-ia32/resources/app/kit',
     index: {
       exists: state.index !== 'none' || building,
       docs,

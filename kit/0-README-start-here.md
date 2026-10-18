@@ -22,9 +22,9 @@ Install the app first (step 6): the other scripts come with it. Then open a term
 | 0 | `<kit>/0-README-start-here.md` | This guide | - | read first |
 | 6 | `bash 6-install-or-update-search-app.sh` | Installs or updates the **Library Search** app - and with it these scripts and book lists (downloads it, or takes a `.tar.gz` from a USB stick) | ~80 MB | first, then to update |
 | 1 | `sudo bash "<kit>/1-fix-https-certificates.sh"` | Updates Ubuntu 16.04's expired security certificates so downloads work | small | once, recommended |
-| 2 | `bash "<kit>/2-download-pdf-books.sh"` | Downloads the PDF books (reads the app's book lists + your `booklist-local.txt`); anything blocked opens in Firefox as `2-failed-downloads-open-in-firefox.html` | ~2 GB | yes |
-| 3 | `bash "<kit>/3-download-offline-wikipedia.sh"` | Offline Wikipedia, WikiMed, repair guides, Q&A sites + the Kiwix reader | ~80 GB | optional |
-| 4 | `bash "<kit>/4-download-khan-academy.sh"` | All of Khan Academy (resumes if interrupted) | 168 GB | optional (also fetches the Kiwix reader if step 3 was skipped) |
+| 2 | `bash "<kit>/2-download-pdf-books.sh"` | In the app: **Library -> Get books**. Downloads the PDF books (reads the app's book lists + your `booklist-local.txt`); anything blocked opens in Firefox as `2-failed-downloads-open-in-firefox.html` | ~2 GB | yes |
+| 3 | `bash "<kit>/3-download-offline-wikipedia.sh"` | In the app: **Library -> Get books -> Encyclopedias**. Offline Wikipedia, WikiMed, repair guides, Q&A sites + the Kiwix reader | ~80 GB | optional |
+| 4 | `bash "<kit>/4-download-khan-academy.sh"` | In the app: **Encyclopedias** as for step 3. All of Khan Academy (resumes if interrupted) | 168 GB | optional (also fetches the Kiwix reader if step 3 was skipped) |
 | 5 | `bash "<kit>/5-start-offline-library-in-firefox.sh"` | Opens everything from steps 3-4 in Firefox at http://localhost:8080 | - | only without the app (the app opens them itself) |
 | 6 | **Library Search** in the sidebar or the Dash | **One search box for everything**: all the books plus Wikipedia, Khan Academy and the Q&A sites | - | every time you want to look something up |
 
@@ -56,6 +56,9 @@ Steps 2-4 are safe to re-run: they skip finished files and resume partial ones.
   the online preview step in the Khan Academy section.
 
 ## 1. Download the PDF library (~2 GB)
+Easiest: in the app, **Library -> Get books -> Download missing books** (it lists what a site blocked, with
+Open in Firefox). The script does the same from a terminal, without the app:
+
 Open a terminal in your library folder (in the file manager: right-click inside the folder -> "Open in Terminal",
 or `cd` to it), then run:
 
@@ -72,6 +75,8 @@ or `cd` to it), then run:
 - Always start scripts with `bash <name>.sh` - that avoids "Permission denied".
 
 ## 2. Optional: offline Wikipedia, medical wiki, repair guides (~80 GB)
+Easiest: in the app, **Library -> Get books -> Encyclopedias**: tick what you want; a cut-off download continues by itself.
+From a terminal:
 
     bash "<kit>/3-download-offline-wikipedia.sh"
     bash "<kit>/5-start-offline-library-in-firefox.sh"     # without the app: opens everything in Firefox at http://localhost:8080
@@ -84,6 +89,9 @@ or `cd` to it), then run:
   Khan Academy has its own script - see below.
 
 ## 3. Manual downloads in Firefox
+The same list is in the app: **Library -> Get books -> Save by hand**, with Open in Firefox and a tick box for each
+(it comes from `<kit>/booklists/manual-downloads.txt`).
+
 Tip first: Firefox opens PDFs in its own viewer. To save one, click the **Download** arrow in the viewer's
 top-right toolbar, or set Preferences -> General -> Applications -> "Portable Document Format" -> **Save File**.
 Firefox saves to ~/Downloads; move each file into the folder shown after the arrow.

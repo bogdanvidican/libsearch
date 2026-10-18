@@ -92,6 +92,11 @@ describe('guide content', () => {
       S.updates.autoLabel,
       S.results.morePages(3),
       S.nav.browse,
+      S.books.title,
+      S.books.stop,
+      S.books.markDone,
+      S.books.tabs.manual,
+      S.books.tabs.zims,
     ];
     expect(labels.filter((l) => !bold.has(l))).toEqual([]);
   });
@@ -130,6 +135,26 @@ describe('guide screen', () => {
     });
     return { el, done: () => act(() => root.unmount()) };
   }
+
+  it('the scripts block shows the real commands for this computer', () => {
+    const live = { status: { kitDir: '/opt/libsearch/kit', roots: ['/home/me/Community Library'] }, statusError: null } as unknown as AppCtx;
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    const root = createRoot(el);
+    act(() => {
+      root.render(
+        <AppContext.Provider value={live}>
+          <Docs section="scripts" />
+        </AppContext.Provider>
+      );
+    });
+    const cmds = Array.from(el.querySelectorAll('.cmd__text')).map((c) => c.textContent);
+    expect(cmds).toContain('bash "/opt/libsearch/kit/2-download-pdf-books.sh" "/home/me/Community Library"');
+    expect(cmds).toContain('sudo bash "/opt/libsearch/kit/1-fix-https-certificates.sh"');
+    expect(cmds).toContain('bash "/opt/libsearch/kit/4-download-khan-academy.sh" "/home/me/Community Library"');
+    act(() => root.unmount());
+    el.remove();
+  });
 
   it('renders every section (an unknown one shows the first)', () => {
     for (const d of DOCS) {

@@ -112,6 +112,14 @@ export const S = {
     copied: 'Copied',
     copyFailed: 'Couldn’t copy. Select the text and press Ctrl+C.',
     liveLoading: 'Loading…',
+    scripts: {
+      cert: '1 · Fix the old security certificates (once, asks for your password):',
+      books: '2 · Download the books on the lists:',
+      wiki: '3 · Download offline Wikipedia, WikiMed, the Q&A sites and the Kiwix reader:',
+      khan: '4 · Download Khan Academy (168 GB):',
+      serve: '5 · Open the encyclopedias in Firefox, without the app:',
+      yourLibrary: '/path/to/your library',
+    },
     paths: {
       library: 'Library folders',
       none: 'None chosen yet',

@@ -415,6 +415,7 @@ export class App {
       rootsSource: this.cfg.rootsSource,
       rootInfo,
       dataDir: this.cfg.dataDir,
+      kitDir: path.join(this.cfg.appDir, 'kit'),
       index,
       kiwix: await this.kiwix.status(),
       tools,

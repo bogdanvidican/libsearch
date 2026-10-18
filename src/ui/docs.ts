@@ -3,7 +3,7 @@
 // Inline text may use **bold** (names of buttons and pages, exactly as the app shows them) and `code`.
 // Keep it true to the app: folder rules are in src/indexer/walk.ts and src/server/config.ts.
 
-export type DocRoute = 'home' | 'browse' | 'library' | 'settings';
+export type DocRoute = 'home' | 'browse' | 'library' | 'settings' | 'books';
 
 export type DocBlock =
   | { type: 'p'; text: string }
@@ -22,9 +22,11 @@ export type DocBlock =
   /** Live: which helper programs this computer has. */
   | { type: 'tools' }
   /** Live: where this app keeps the library, index, settings and logs. */
-  | { type: 'paths' };
+  | { type: 'paths' }
+  /** Live: the download script commands for this computer (the app's kit folder and the library folder). */
+  | { type: 'scripts' };
 
-export type DocIcon = 'start' | 'search' | 'open' | 'folder' | 'index' | 'globe' | 'tools' | 'settings' | 'help' | 'files';
+export type DocIcon = 'start' | 'search' | 'open' | 'folder' | 'index' | 'globe' | 'tools' | 'settings' | 'help' | 'files' | 'download';
 
 export interface DocSection {
   id: string;
@@ -227,6 +229,81 @@ export const DOCS: DocSection[] = [
     ],
   },
   {
+    id: 'setup',
+    title: 'Setting up a new library',
+    summary: 'From an empty computer to a full library, in order.',
+    icon: 'start',
+    blocks: [
+      {
+        type: 'steps',
+        items: [
+          'Install Library Search with `bash 6-install-or-update-search-app.sh`. It puts the app in the menu. On a fresh Ubuntu 16.04, download the release file and that script in Firefox first (Firefox has its own security certificates).',
+          'Make a library folder outside the app, for example `Community Library` in your home folder, and choose it under **Library folders** on the **Library** page.',
+          'On the **Library** page, click **Get books** and download the books on the lists (about 2 GB).',
+          'Optional: on the same page, **Encyclopedias** downloads offline Wikipedia, WikiMed, Khan Academy and the Q&A sites (from 1 GB to 170 GB each).',
+          'Back on the **Library** page, click **Build index** so the books can be searched.',
+        ],
+      },
+      {
+        type: 'note',
+        kind: 'tip',
+        text: 'Already have the books on another computer or a USB stick? Copy the topic folders into the library folder first: the downloads skip every book that is already there.',
+      },
+      {
+        type: 'p',
+        text:
+          'The download scripts that come with the app do the same from a terminal, without the app (see The download scripts). ' +
+          'Only they need `sudo bash 1-fix-https-certificates.sh` on Ubuntu 16.04; the app has its own certificates.',
+      },
+      { type: 'link', text: 'The download scripts', section: 'scripts' },
+    ],
+  },
+  {
+    id: 'getbooks',
+    title: 'Getting books',
+    summary: 'Downloading the books on the library’s lists, and the ones to save by hand.',
+    icon: 'download',
+    blocks: [
+      {
+        type: 'p',
+        text:
+          'The library comes with lists of free books: medicine, water, farming, building, engines, schooling and more. ' +
+          '**Get books** on the **Library** page downloads the ones this computer doesn’t have yet.',
+      },
+      {
+        type: 'steps',
+        items: [
+          'Connect the computer to the internet.',
+          'Open **Library** and click **Get books**.',
+          'Click **Download missing books**. You can keep using the app meanwhile. **Stop** pauses; the next download continues where it stopped.',
+          'Some sites block programs. They are listed below with the reason: click **Open in Firefox**, save the book into the folder shown, then click **Mark as done**.',
+          'When it has finished, click **Update index** so the new books can be found.',
+        ],
+      },
+      { type: 'h', text: 'Books to save by hand' },
+      {
+        type: 'p',
+        text:
+          'A few sites need a click, a form or “Print to PDF”, so no program can fetch them. **Save by hand** lists them, ' +
+          'each with **Open in Firefox** and a tick box. Firefox shows a PDF in its own viewer: its Download arrow (top right) saves it. ' +
+          'A web page is saved with Firefox menu → Print → “Save to PDF”.',
+      },
+      { type: 'h', text: 'Books of your own' },
+      {
+        type: 'p',
+        text:
+          'To add books to the lists, write them into `booklist-local.txt` in the library folder (the file explains how; ' +
+          'it appears there after the first download). Updates of the app never change it.',
+      },
+      {
+        type: 'note',
+        kind: 'tip',
+        text: 'Books are only ever saved into the library folder, never inside the app: deleting or reinstalling the app keeps every book.',
+      },
+      { type: 'link', text: 'Open Get books', route: 'books' },
+    ],
+  },
+  {
     id: 'index',
     title: 'The book index',
     summary: 'Why the app reads every book first, and how to keep it up to date.',
@@ -294,8 +371,9 @@ export const DOCS: DocSection[] = [
       {
         type: 'p',
         text:
-          'In the CF-30 kit, `3-download-offline-wikipedia.sh` and `4-download-khan-academy.sh` download all of this. ' +
-          'They need internet and a lot of disk space.',
+          '**Get books** → **Encyclopedias** on the Library page downloads the .zim files and the Kiwix reader. ' +
+          'They need internet and a lot of disk space; a download that is cut off continues where it stopped. ' +
+          'The scripts `3-download-offline-wikipedia.sh` and `4-download-khan-academy.sh` do the same from a terminal.',
       },
       { type: 'h', text: 'Starting and checking' },
       {
@@ -308,6 +386,32 @@ export const DOCS: DocSection[] = [
         ],
       },
       { type: 'link', text: 'Open the Library page', route: 'library' },
+    ],
+  },
+  {
+    id: 'khan',
+    title: 'Khan Academy',
+    summary: 'All of Khan Academy offline: videos, articles and exercises.',
+    icon: 'globe',
+    blocks: [
+      {
+        type: 'steps',
+        items: [
+          'Try it first, online, for five minutes: in Firefox open `https://library.kiwix.org`, search for Khan Academy, play a video and try an exercise. If that works in this Firefox, the offline copy will too.',
+          'Make sure the library folder is on a disk with more than 200 GB free, formatted ext4, exFAT or NTFS - not FAT32. The CF-30’s own disk is fine.',
+          'On the **Library** page click **Get books**, open **Encyclopedias**, tick Khan Academy and download it: 168 GB, about 8 hours at 50 Mbit/s or a day and a half at 10 Mbit/s. It may stop and continue as often as needed.',
+          'It then appears in the search results, under **Khan Academy**.',
+        ],
+      },
+      {
+        type: 'list',
+        items: [
+          'Videos don’t play? Install the video codecs, then start the app again: `sudo apt-get install ubuntu-restricted-extras`.',
+          'This copy is from March 2023 (the newest Kiwix has published).',
+          'Kiwix keeps no logins and no progress: keep a paper log for each child.',
+          'Kolibri, which tracks progress, does not install on Ubuntu 16.04; it can run on a newer computer or a Raspberry Pi.',
+        ],
+      },
     ],
   },
   {
@@ -368,6 +472,96 @@ export const DOCS: DocSection[] = [
       { type: 'cmd', label: 'Releases page:', text: RELEASES },
       { type: 'cmd', label: 'Install from the USB copy:', text: 'bash 6-install-or-update-search-app.sh library-search-linux-ia32-vX.Y.Z.tar.gz' },
       { type: 'link', text: 'Open Settings', route: 'settings' },
+    ],
+  },
+  {
+    id: 'cf30',
+    title: 'This laptop (CF-30)',
+    summary: 'Getting the most out of an old 32-bit Toughbook with a hard disk.',
+    icon: 'tools',
+    blocks: [
+      {
+        type: 'list',
+        items: [
+          '**32-bit:** everything here runs on 32-bit Ubuntu (`uname -m` says i686). The Kiwix reader comes as a 32-bit build; the newest one that has one is 3.7.0, and the download picks it by itself.',
+          '**Test small first:** download a small encyclopedia (PhET, 0.1 GB), check that it opens, then a middle one (WikiMed, 2 GB), and only then Khan Academy (168 GB).',
+          '**Disk space:** the books take about 2 GB, the offline Wikipedia set about 80 GB, Khan Academy 168 GB - about 250 GB in all.',
+          '**Not on FAT32:** a FAT32 USB stick can’t hold files over 4 GB. Keep the library on ext4 or exFAT (exFAT on 16.04: `sudo apt-get install exfat-fuse exfat-utils`).',
+          '**Keep a second copy** of the books (about 2 GB) on a USB stick or another computer: one spinning disk is a single point of failure.',
+          '**Video:** the CPU decodes video by itself, so Khan Academy videos may stutter at full screen; a smaller window helps.',
+          '**Memory:** keep only a few Firefox tabs open, and check that swap exists with `free -h` (the Swap line should not be 0).',
+        ],
+      },
+      { type: 'h', text: 'Make the hard disk feel faster' },
+      { type: 'cmd', label: 'Use the memory before the slow disk swap:', text: 'sudo sysctl vm.swappiness=10' },
+      { type: 'cmd', label: 'Keep that after a restart:', text: 'echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf' },
+    ],
+  },
+  {
+    id: 'reading',
+    title: 'Reading and printing',
+    summary: 'Opening PDF and EPUB books, and what is worth printing on paper.',
+    icon: 'open',
+    blocks: [
+      {
+        type: 'list',
+        items: [
+          'PDF books open in the Document Viewer (Evince) at the right page. Firefox can show them too.',
+          'EPUB books open inside this app. To read them outside it: `sudo apt-get install fbreader`.',
+        ],
+      },
+      { type: 'h', text: 'Print these on paper' },
+      {
+        type: 'p',
+        text:
+          'If the power or the computer fails, paper still works: the Where There Is No Doctor chapters, Surgical Care at the District Hospital, ' +
+          'TC 4-02.1 First Aid, the USDA Home Canning Guide, the WHO/WEDC water technical notes, Survival ATP 3-50.21 and the Seed Saving Guidelines.',
+      },
+    ],
+  },
+  {
+    id: 'linux',
+    title: 'Linux manuals',
+    summary: 'Help with the computer itself, without internet.',
+    icon: 'tools',
+    blocks: [
+      {
+        type: 'p',
+        text:
+          'The topic Linux & Ubuntu (folder `16 Linux & Ubuntu`) holds Introduction to Linux, the Bash Guide for Beginners, the Advanced Bash-Scripting Guide, ' +
+          'the System and Network Administrators’ Guides, The Linux Command Line and the Debian Administrator’s Handbook.',
+      },
+      {
+        type: 'list',
+        items: [
+          'The Ubuntu Server documentation is written for 24.04. Most of it applies to 16.04, except networking: 16.04 uses `/etc/network/interfaces`, not netplan.',
+          'The Q&A encyclopedias Unix & Linux, Ask Ubuntu and Super User answer most questions.',
+          'Every command explains itself offline: `man <command>`, for example `man cp`.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'scripts',
+    title: 'The download scripts',
+    summary: 'Downloading from a terminal, without the app.',
+    icon: 'files',
+    blocks: [
+      {
+        type: 'p',
+        text:
+          'The app comes with the scripts of the old CF-30 kit. They download the same books and encyclopedias from a terminal, ' +
+          'without the app, and save them into the library folder - never into the app. These are the commands for this computer:',
+      },
+      { type: 'scripts' },
+      {
+        type: 'list',
+        items: [
+          'Run them in a terminal, in this order. Re-running is safe: finished files are skipped and cut-off ones continue.',
+          'Books that a site blocks are listed in `2-failed-downloads-open-in-firefox.html` in the library folder.',
+          'The certificate fix is needed only for the scripts on Ubuntu 16.04, not for the app.',
+        ],
+      },
     ],
   },
   {

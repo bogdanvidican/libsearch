@@ -248,6 +248,8 @@ export interface Status {
   rootsSource: RootsSource;
   rootInfo: RootInfo[];
   dataDir: string;
+  /** The app's kit folder: the download scripts and the book lists that came with this version. */
+  kitDir: string;
   index: IndexStatus;
   kiwix: KiwixStatus;
   tools: ToolStatus;
