@@ -1,0 +1,30 @@
+# Offline encyclopedias (Kiwix .zim files) from https://download.kiwix.org/zim/<mirror folder>/
+# Read by the app (Library -> Get books -> Encyclopedias) and by 3-download-offline-wikipedia.sh (the "yes" ones).
+# Format, one per line (the title is the rest of the line):
+#   Z|<mirror folder>|<file name prefix>|<about how many GB>|<yes: script 3 downloads it | no>|<title>
+# The newest file starting with the prefix is downloaded, e.g. wikipedia_en_medicine_maxi_2026-01.zim.
+
+Z|wikipedia|wikipedia_en_medicine_maxi_|2|yes|WikiMed (medical encyclopedia)
+Z|other|appropedia_en_all_maxi_|1|yes|Appropedia (appropriate technology)
+Z|ifixit|ifixit_en_all_|3|yes|iFixit repair guides
+Z|wikibooks|wikibooks_en_all_maxi_|6|yes|Wikibooks (how-to books)
+Z|wikipedia|wikipedia_ro_all_maxi_|9|yes|Wikipedia in Romanian
+Z|wikipedia|wikipedia_en_top1m_maxi_|46|yes|Wikipedia (English, the top 1 million articles)
+Z|stack_exchange|diy.stackexchange.com_en_all_|2|yes|DIY and home improvement (Q&A)
+Z|stack_exchange|gardening.stackexchange.com_en_all_|1|yes|Gardening (Q&A)
+Z|stack_exchange|electronics.stackexchange.com_en_all_|4|yes|Electronics (Q&A)
+Z|stack_exchange|mechanics.stackexchange.com_en_all_|1|yes|Car and motor maintenance (Q&A)
+Z|stack_exchange|cooking.stackexchange.com_en_all_|1|yes|Cooking (Q&A)
+Z|stack_exchange|woodworking.stackexchange.com_en_all_|1|yes|Woodworking (Q&A)
+Z|stack_exchange|homebrew.stackexchange.com_en_all_|1|yes|Brewing (Q&A)
+Z|stack_exchange|outdoors.stackexchange.com_en_all_|1|yes|The outdoors (Q&A)
+Z|stack_exchange|ham.stackexchange.com_en_all_|1|yes|Amateur radio (Q&A)
+Z|stack_exchange|unix.stackexchange.com_en_all_|2|yes|Unix & Linux (Q&A)
+Z|stack_exchange|askubuntu.com_en_all_|3|yes|Ask Ubuntu (Q&A)
+Z|stack_exchange|superuser.com_en_all_|4|yes|Super User: PC and Linux troubleshooting (Q&A)
+Z|phet|phet_en_all_|1|yes|PhET science simulations
+Z|libretexts|libretexts.org_en_k12_|1|yes|LibreTexts K-12 textbooks
+
+# Big ones, not downloaded by script 3:
+Z|wikipedia|wikipedia_en_all_maxi_|119|no|Wikipedia (English, all articles, with images)
+Z|other|khanacademy_en_all_|168|no|Khan Academy (English, all subjects; script 4 downloads it)

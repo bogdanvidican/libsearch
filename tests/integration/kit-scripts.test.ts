@@ -290,6 +290,17 @@ describe('scripts 3-5', () => {
     }
   });
 
+  it("3 downloads the encyclopedias marked yes in the app's list", async () => {
+    const c = kitCopy();
+    fs.writeFileSync(
+      path.join(c.kit, 'booklists', 'encyclopedias.txt'),
+      '# test\nZ|wikipedia|wikipedia_en_medicine_maxi_|2|yes|WikiMed\nZ|other|khanacademy_en_all_|168|no|Khan Academy\r\nZ|other|test_custom_|1|yes|A test one\n'
+    );
+    const r = await run(path.join(c.kit, '3-download-offline-wikipedia.sh'), [c.lib], { cwd: c.root, offline: true });
+    const asked = (r.out.match(/!! nothing found for (\S+)/g) || []).map((l) => l.replace('!! nothing found for ', ''));
+    expect(asked).toEqual(['wikipedia_en_medicine_maxi_', 'test_custom_']);
+  });
+
   it('5 starts kiwix-serve from the library with its ZIM files', async () => {
     const c = kitCopy();
     const log = path.join(c.root, 'kiwix-serve.log');

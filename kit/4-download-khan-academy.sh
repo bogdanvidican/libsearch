@@ -8,7 +8,8 @@ KIT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 shift "$LIBRARY_SHIFT"; cd "$LIBRARY" || exit 1
 DIR="15 Offline Encyclopedias (Kiwix)"; mkdir -p "$DIR"
 LANGCODE="${1:-en}"     # optional, after the folder: bash 4-download-khan-academy.sh es   (Spanish 150 GB, French 94 GB)
-MIRROR="https://download.kiwix.org/zim/other"
+KIWIX="${LIBRARY_KIT_MIRROR:-https://download.kiwix.org}"   # a local server in the app's tests
+MIRROR="$KIWIX/zim/other"
 command -v curl >/dev/null || { echo "Install curl first:  sudo apt-get install curl"; exit 1; }
 
 # 1) Drive checks
@@ -33,10 +34,10 @@ if [ "$TOTAL" -gt 0 ] && [ "$FREE_MB" -lt "$NEED_MB" ]; then echo "!! Not enough
 # 2) The reader (kiwix-serve, static build that runs on old Ubuntu)
 case "$(uname -m)" in x86_64) ARCH=x86_64;; i?86) ARCH=i586;; aarch64) ARCH=aarch64;; armv7l|armv6l) ARCH=armhf;; *) ARCH=x86_64;; esac
 if [ ! -x "$DIR/kiwix-tools/kiwix-serve" ]; then
-  T=$(curl -sL https://download.kiwix.org/release/kiwix-tools/ | grep -oE "kiwix-tools_linux-${ARCH}-[0-9.]+\.tar\.gz" | sort -uV | tail -1)
+  T=$(curl -sL "$KIWIX/release/kiwix-tools/" | grep -oE "kiwix-tools_linux-${ARCH}-[0-9.]+\.tar\.gz" | sort -uV | tail -1)
   [ -z "$T" ] && T="kiwix-tools_linux-${ARCH}-3.7.0.tar.gz"   # last version confirmed to have a 32-bit (i586) build
   echo "-> reader: $T"
-  curl -L --fail -o "$DIR/kiwix-tools.tar.gz" "https://download.kiwix.org/release/kiwix-tools/$T" \
+  curl -L --fail -o "$DIR/kiwix-tools.tar.gz" "$KIWIX/release/kiwix-tools/$T" \
    && mkdir -p "$DIR/kiwix-tools" && tar -xzf "$DIR/kiwix-tools.tar.gz" -C "$DIR/kiwix-tools" --strip-components=1 \
    && rm -f "$DIR/kiwix-tools.tar.gz" || echo "!! could not get kiwix-serve (re-run later)"
 fi
