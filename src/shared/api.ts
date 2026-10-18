@@ -133,6 +133,44 @@ export interface BuildProgress {
   message?: string;
 }
 
+/** A download job (books or encyclopedias, src/downloader), shown on Library -> Get books. */
+export interface DownloadProgress {
+  running: boolean;
+  phase: 'idle' | 'checking' | 'downloading' | 'done' | 'failed' | 'cancelled';
+  /** Files handled / known so far (a page or archive.org item adds its files once it has been read). */
+  done: number;
+  total: number;
+  /** "<folder>/<file>" being downloaded. */
+  currentFile: string;
+  /** Bytes of the current file (counting what an earlier try left) and its full size (0 = unknown). */
+  fileReceived: number;
+  fileTotal: number;
+  /** Bytes received in this run, and the speed over the last few seconds (bytes per second). */
+  bytes: number;
+  speed: number;
+  downloaded: number;
+  skipped: number;
+  failed: number;
+  /** Encyclopedias: which try of the current file (they continue after the connection drops). */
+  attempt?: number;
+  startedAt?: number;
+  finishedAt?: number;
+  /** Why it stopped (offline, disk full …), or a warning (little space left, list lines that can't be used). */
+  notice?: Notice;
+}
+
+export interface DownloadFailure {
+  /** "<folder>|<file>" for a book; "S|…" / "A|…" when a whole page or archive.org item couldn't be read. */
+  id: string;
+  folder: string;
+  /** File name, or "(page)" when a page or archive.org item couldn't be read. */
+  file: string;
+  url: string;
+  code: string;
+  reason: string;
+  at: number;
+}
+
 export interface IndexStatus {
   exists: boolean;
   docs: number;
