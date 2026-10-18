@@ -199,6 +199,51 @@ if [ $rc -eq 0 ] && [ -z "$missing" ]; then
   ok "2-download-pdf-books.sh: the app's lists + the library's booklist-local.txt downloaded into the library (bash $BASH_VERSION, $(curl --version | head -n 1 | cut -d' ' -f1-2))"
 else bad "2-download-pdf-books.sh: exit $rc, not downloaded:${missing:- none} (see kit-download.log)"; fi
 
+# --- (h) the app's own book downloader (build/downloader/downloader.js) on Electron's Node ---------------------
+# --min-free-mb 0: no df (QEMU can't start other programs from Electron's Node; natively df is tested on the host).
+section "(h) in-app book downloads (downloader.js)"
+H=/tmp/dl-h
+L="$H/Library & Co (h)"
+rm -rf "$H" && mkdir -p "$L/01 Medicine"
+printf '%s\n' 'F|01 Medicine|Good.pdf|http://127.0.0.1:18091/pdf/good.pdf' \
+  'F|01 Medicine|Check.pdf|http://127.0.0.1:18091/html/check.pdf' \
+  'F|01 Medicine|Refused.pdf|http://127.0.0.1:18091/403.pdf' >"$H/list.txt"
+ELECTRON_RUN_AS_NODE=1 "$BIN" -e '
+require("http").createServer(function (q, s) {
+  if (q.url.indexOf("/pdf/") === 0) s.end("%PDF-1.4\n%test\n");
+  else if (q.url.indexOf("/html/") === 0) s.end("<html><body>Checking your browser</body></html>");
+  else if (q.url === "/403.pdf") { s.statusCode = 403; s.end(); }
+  else s.end("ok");
+}).listen(18091, "127.0.0.1");' >"$OUT/dl-server.log" 2>&1 &
+DL_SERVER=$!
+for _ in $(seq 1 120); do
+  [ "$(curl -s --max-time 5 http://127.0.0.1:18091/ 2>/dev/null)" = "ok" ] && break
+  kill -0 "$DL_SERVER" 2>/dev/null || break
+  sleep 1
+done
+ELECTRON_RUN_AS_NODE=1 timeout 300 "$BIN" "$APPRES/build/downloader/downloader.js" --job books --library "$L" --list "$H/list.txt" \
+  --check-url http://127.0.0.1:18091/ --archive-base http://127.0.0.1:18091 --min-free-mb 0 --json >"$OUT/downloader.log" 2>&1
+rc=$?
+kill "$DL_SERVER" 2>/dev/null
+NOTES_FILE="$L/library-search-downloads.json"
+if [ $rc -eq 0 ] && [ "$(head -c 4 "$L/01 Medicine/Good.pdf" 2>/dev/null)" = "%PDF" ] \
+  && grep -q '"code": "not-a-book"' "$NOTES_FILE" 2>/dev/null && grep -q '"code": "http-403"' "$NOTES_FILE" 2>/dev/null \
+  && [ ! -e "$L/01 Medicine/Check.pdf" ]; then
+  ok "in-app downloader: the book is in the library; the bot check and the 403 are listed with reasons"
+else bad "in-app downloader: exit $rc (see downloader.log): $(tail -n 2 "$OUT/downloader.log" | cut -c1-200)"; fi
+
+# --- (i) HTTPS with Electron's own certificate store (Ubuntu 16.04's are outdated; the app doesn't use them) --
+section "(i) HTTPS with Electron's own certificates"
+tls="$(ELECTRON_RUN_AS_NODE=1 timeout 60 "$BIN" -e '
+require("https").get("https://www.gutenberg.org/", { headers: { "User-Agent": "Mozilla/5.0" } }, function (r) {
+  console.log("status " + r.statusCode); r.resume();
+}).on("error", function (e) { console.log("error " + (e.code || e.message)); });' 2>&1 | tail -n 1)"
+case "$tls" in
+  "status "*) ok "TLS to www.gutenberg.org works with Electron's own certificates ($tls)";;
+  *CERT*|*SSL*|*UNABLE_TO*|*SELF_SIGNED*) bad "TLS to www.gutenberg.org failed: $tls";;
+  *) note "TLS check skipped (no internet in the container?): $tls";;
+esac
+
 echo
 echo "== Summary =="
 printf '%s\n' "${RESULTS[@]}"

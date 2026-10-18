@@ -146,7 +146,8 @@ export async function downloadBooks(o: BooksJob, h: JobHooks): Promise<DownloadP
   const offline = await checkOnline(o.checkUrl);
   if (offline) return stop('failed', offline);
   if (h.isCancelled()) return stop('cancelled');
-  const free = freeBytes(o.library);
+  // 0 = don't check at all (no df: QEMU, where the i386 test runs, can't start other programs from Electron's Node).
+  const free = o.minFreeMb > 0 ? freeBytes(o.library) : undefined;
   if (free !== undefined && o.minFreeMb > 0 && free < o.minFreeMb * MB) {
     return stop('failed', {
       kind: 'error',
