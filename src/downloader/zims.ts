@@ -98,12 +98,48 @@ function pause(ms: number, isCancelled: () => boolean): Promise<void> {
   });
 }
 
-/** The full size of a file on the mirror (asks for its first byte only). 0 when the site doesn't say. */
+/**
+ * The full size of a file on the mirror (asks for its first byte only). Only a 206 with a Content-Range is believed:
+ * a 200 may be a login page or an error page, and its length says nothing about the file. 0 = unknown.
+ */
 async function remoteSize(url: string, stallMs: number, isCancelled: () => boolean): Promise<number> {
   const res = await get(url, { 'User-Agent': USER_AGENT, Range: 'bytes=0-0' }, stallMs, { isCancelled });
-  const total = rangeTotal(res) || Number(res.headers['content-length']) || 0;
+  const total = res.statusCode === 206 ? rangeTotal(res) : 0;
   res.destroy();
-  return res.statusCode === 206 ? total : Number(res.headers['content-length']) || 0;
+  return total;
+}
+
+/**
+ * Whole, by the file's own header: the ZIM magic, and as many bytes as the header says (the checksum sits at the
+ * very end). Doesn't trust a size a web site reported.
+ */
+export function zimWhole(file: string): boolean {
+  let fd: number | undefined;
+  try {
+    fd = fs.openSync(file, 'r');
+    const h = Buffer.alloc(80);
+    if (fs.readSync(fd, h, 0, 80, 0) < 80 || !MAGIC.every((v, i) => h[i] === v)) return false;
+    const checksumPos = h.readUInt32LE(72) + h.readUInt32LE(76) * 4294967296;
+    return checksumPos > 0 && fs.fstatSync(fd).size >= checksumPos + 16;
+  } catch (e) {
+    return false;
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+  }
+}
+
+/** A cut-off download of an older file of the same encyclopedia ("<prefix><date>.zim.part", the biggest). */
+function olderPart(dir: string, prefix: string, current: string): string | null {
+  let names: string[];
+  try {
+    names = fs.readdirSync(dir);
+  } catch (e) {
+    return null;
+  }
+  const re = new RegExp('^' + prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[0-9-]+\\.zim\\.part$');
+  const parts = names.filter((n) => re.test(n) && n !== current + '.part');
+  parts.sort((a, b) => sizeOf(path.join(dir, b)) - sizeOf(path.join(dir, a)));
+  return parts[0] || null;
 }
 
 export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProgress> {
@@ -161,14 +197,28 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
     p.attempt = undefined;
     emit(true);
     let name: string | null;
+    let listing = '';
     try {
-      name = newestZimFile(await readBody(await get(folderUrl, { 'User-Agent': USER_AGENT }, o.stallMs, { isCancelled: () => h.isCancelled() }), 20 * 1048576), e.prefix);
+      listing = await readBody(await get(folderUrl, { 'User-Agent': USER_AGENT }, o.stallMs, { isCancelled: () => h.isCancelled() }), 20 * 1048576);
+      name = newestZimFile(listing, e.prefix);
     } catch (err) {
       const d = toDownloadError(err);
       if (d.code === 'cancelled') throw d;
       return fail(e, folderUrl, d);
     }
     if (!name) return fail(e, folderUrl, new DownloadError('not-found', `The Kiwix site has no file starting with ${e.prefix}.`));
+    // A cut-off download of an older version: continue it while the mirror still has it (never start tens of GB
+    // over because a newer month came out); one the mirror no longer has is only taking space.
+    const older = olderPart(o.kiwixDir, e.prefix, name);
+    if (older) {
+      const olderName = older.replace(/\.part$/, '');
+      if (listing.indexOf(olderName) >= 0) {
+        name = olderName;
+      } else {
+        remove(path.join(o.kiwixDir, older));
+        h.log(`removed ${older}: the Kiwix site no longer has that file`);
+      }
+    }
     const url = folderUrl + name;
     const target = path.join(o.kiwixDir, name);
     const part = target + '.part';
@@ -184,21 +234,20 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
     p.fileTotal = total;
 
     if (exists(target)) {
-      const have = sizeOf(target);
-      if ((!total || have === total) && looksLikeZim(target)) {
+      if (zimWhole(target)) {
+        // Already here (whatever size the site says: it may be another build of the same month).
         p.skipped++;
         return;
       }
-      if (total && have < total) {
-        // Half a file, e.g. from 4-download-khan-academy.sh: continue from it (keep the bigger of the two).
-        if (have > sizeOf(part)) {
-          remove(part);
-          fs.renameSync(target, part);
-        } else {
-          remove(target);
-        }
-      } else {
+      if (!looksLikeZim(target)) {
         return fail(e, url, new DownloadError('not-zim', `${name} is there, but it is not a ZIM file. Delete it, then download again.`));
+      }
+      // Half a file, e.g. from 4-download-khan-academy.sh: continue from it (keep the bigger of the two).
+      if (sizeOf(target) > sizeOf(part)) {
+        remove(part);
+        fs.renameSync(target, part);
+      } else {
+        remove(target);
       }
     }
     const fsName = disk.type(o.kiwixDir);
@@ -216,7 +265,7 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
     let err: DownloadError | null = null;
     for (let attempt = 1; attempt <= o.retries; attempt++) {
       // A .part that is already whole (the app closed just before renaming it) is not downloaded again.
-      if (total && sizeOf(part) >= total) {
+      if (zimWhole(part)) {
         err = null;
         break;
       }
@@ -225,6 +274,7 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
       try {
         await fetchToFile(url, target, {
           stallMs: o.stallMs,
+          keepPart: true,
           isCancelled: () => h.isCancelled(),
           onBytes: (have, size) => {
             if (prev >= 0 && have > prev) {
@@ -241,6 +291,9 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
         err = null;
         break;
       } catch (e2) {
+        // Pulled out (a USB drive): stop plainly; the notes keep the mark to continue later.
+        const gone = libraryGone(o.library);
+        if (gone) throw gone;
         err = toDownloadError(e2);
         if (err.code === 'cancelled' || err.code === 'disk-full') throw err;
         if (!TRANSIENT.test(err.code)) break;
@@ -253,9 +306,15 @@ export async function downloadZims(o: ZimJob, h: ZimHooks): Promise<DownloadProg
       const reason = TRANSIENT.test(err.code) ? `${err.message} Gave up after ${o.retries} tries; click Download again to continue.` : err.message;
       return fail(e, url, new DownloadError(err.code, reason));
     }
+    const goneNow = libraryGone(o.library);
+    if (goneNow) throw goneNow;
     if (!looksLikeZim(part)) {
       remove(part);
       return fail(e, url, new DownloadError('not-zim', `The download of ${name} is not a ZIM file, so it was deleted.`));
+    }
+    if (!zimWhole(part)) {
+      // The site stopped early without saying so: keep what arrived for the next try.
+      return fail(e, url, new DownloadError('offline', `${name} is not complete yet. Click Download again to continue it.`));
     }
     fs.renameSync(part, target);
     p.downloaded++;

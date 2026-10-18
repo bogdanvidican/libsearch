@@ -263,6 +263,9 @@ describe('Encyclopedias', () => {
     const { el, done } = await show(ctxWith(progress(), {}, running), overview(), 'zims');
     expect(el.textContent).toContain(S.books.zims.attempt(3));
     expect(el.textContent).toContain(S.books.zims.continues);
+    // One big file: the bar follows its bytes (3 of 168 GB = 2 %), with the time left at this speed.
+    expect(el.querySelector('[role="progressbar"]')!.getAttribute('aria-valuenow')).toBe('2');
+    expect(el.textContent).toContain('About 23 h 28 min left');
     await act(async () => {
       button(el, S.books.stop)!.click();
     });

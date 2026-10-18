@@ -56,6 +56,43 @@ function freePort(): Promise<number> {
   });
 }
 
+describe('restarting while it is still starting', () => {
+  it('a second restart waits for the first, then serves the new file too', async () => {
+    const dir = path.join(tmp, 'lib2', '15 Offline Encyclopedias (Kiwix)');
+    fs.mkdirSync(path.join(tmp, 'lib2', '01 Medicine'), { recursive: true });
+    fs.mkdirSync(dir, { recursive: true });
+    fakeZim(path.join(dir, 'first.zim'), 4096);
+    // A slow starter (an old hard disk): it answers only after a while.
+    const slow = path.join(tmp, 'slow-kiwix-serve');
+    fs.writeFileSync(
+      slow,
+      `#!/usr/bin/env node
+const http = require('http');
+const port = Number(process.argv.find((a) => a.startsWith('--port=')).slice(7));
+const zims = process.argv.slice(2).filter((a) => a.endsWith('.zim'));
+setTimeout(() => http.createServer((req, res) => {
+  res.end('<feed>' + zims.map((z, i) => '<entry><id>urn:uuid:' + i + '</id><title>' + z + '</title><name>n' + i + '</name><link type="text/html" href="/content/n' + i + '"/></entry>').join('') + '</feed>');
+}).listen(port, '127.0.0.1'), 1500);
+`
+    );
+    fs.chmodSync(slow, 0o755);
+    const port = await freePort();
+    const kiwix = new Kiwix(resolveConfig(['--library-root', path.join(tmp, 'lib2'), '--kiwix-serve', slow, '--kiwix-port', String(port)], tmp));
+    try {
+      const first = kiwix.start();
+      await new Promise((r) => setTimeout(r, 300));
+      fakeZim(path.join(dir, 'second.zim'), 4096); // a download finished meanwhile
+      const s = await kiwix.restart();
+      await first;
+      expect(s.state).toBe('running');
+      expect(s.message).toBeUndefined();
+      expect(s.books).toBe(2);
+    } finally {
+      kiwix.stop();
+    }
+  });
+});
+
 describe('starting kiwix-serve with a bad file among good ones', () => {
   it('leaves the bad files out, starts with the rest, and says why', async () => {
     // Fake kiwix-serve: like the real one, it exits when any file can't be added; otherwise it serves a catalog.

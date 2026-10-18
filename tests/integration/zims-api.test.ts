@@ -11,8 +11,10 @@ import { loadState, updateState } from '../../src/downloader/state';
 
 const REPO = path.join(__dirname, '..', '..');
 const KIWIX = '15 Offline Encyclopedias (Kiwix)';
-/** Enough of a ZIM file for inspectZim: the magic, then zeros (no checksum position). */
-const ZIM = Buffer.concat([Buffer.from([0x5a, 0x49, 0x4d, 0x04]), Buffer.alloc(30000, 0)]);
+/** Enough of a ZIM file: the magic, and the checksum position at the end (so whole can be told from cut off). */
+const ZIM = Buffer.alloc(30004, 0);
+ZIM.writeUInt32LE(72173914, 0);
+ZIM.writeUInt32LE(ZIM.length - 16, 72);
 const token = 't';
 
 let tmp: string;

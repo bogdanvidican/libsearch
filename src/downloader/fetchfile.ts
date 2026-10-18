@@ -68,6 +68,12 @@ export interface FetchOptions {
   isCancelled: () => boolean;
   /** Bytes in the .part so far (including what was there before) and the full size (0 = unknown). */
   onBytes: (have: number, total: number) => void;
+  /**
+   * Never start a .part with data over (encyclopedias: tens of GB). An answer that doesn't continue it - a Wi-Fi
+   * login page, a proxy, a mirror in maintenance - counts as a dropped connection; a 416 (nothing past the end)
+   * returns at once and the caller checks whether the .part is whole.
+   */
+  keepPart?: boolean;
 }
 
 function sizeOf(file: string): number {
@@ -94,6 +100,7 @@ export async function fetchToFile(url: string, file: string, o: FetchOptions, re
   try {
     res = await get(url, headers, o.stallMs, { isCancelled: o.isCancelled });
   } catch (e) {
+    if (e instanceof HttpStatusError && e.status === 416 && have > 0 && o.keepPart) return { bytes: have, total: 0 };
     if (e instanceof HttpStatusError && e.status === 416 && have > 0 && !retried416) {
       // The .part is as long as (or longer than) the file: start again from nothing.
       fs.unlinkSync(part);
@@ -102,6 +109,10 @@ export async function fetchToFile(url: string, file: string, o: FetchOptions, re
     throw toDownloadError(e);
   }
   const resumed = have > 0 && res.statusCode === 206;
+  if (have > 0 && !resumed && o.keepPart) {
+    res.destroy();
+    throw new DownloadError('offline', 'The site did not continue the download where it stopped (a login page or a busy server?).');
+  }
   if (!resumed) have = 0;
   const length = Number(res.headers['content-length']) || 0;
   const total = resumed ? rangeTotal(res) || (length ? have + length : 0) : length;

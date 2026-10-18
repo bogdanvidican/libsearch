@@ -309,6 +309,8 @@ export class Kiwix {
 
   /** Stops our kiwix-serve (if we started it) and starts again: picks up finished downloads and new files. */
   async restart(): Promise<KiwixStatus> {
+    // Still starting (two downloads finished close together): let that finish, then restart with the new files.
+    if (this.starting) await this.starting;
     if (this.child && this.startedByUs) {
       const child = this.child;
       const gone = new Promise<void>((r) => child.once('exit', () => r()));

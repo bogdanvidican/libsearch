@@ -3,7 +3,7 @@ import { Check, CircleCheck, Download, ExternalLink, Globe, ListChecks, ListOrde
 import type { BooksOverview, DownloadFailure, DownloadProgress, EncyclopediasOverview, ListsStatus, ManualItem } from '../../shared/api';
 import { api, ApiError } from '../api';
 import { ToastInput, useApp } from '../context';
-import { formatBytes, formatDate, percent } from '../format';
+import { formatBytes, formatDate, percent, timeLeft } from '../format';
 import { useLoad } from '../hooks';
 import { BooksTab, navigate, routeToHash } from '../router';
 import { formatNumber, S } from '../strings';
@@ -84,7 +84,7 @@ function Encyclopedias() {
       {data.reader === 'unsupported' ? <NoticeBox kind="warning" compact title={z.readerUnsupported} /> : null}
       {running && job ? (
         <>
-          <JobProgress job={job} onStop={stop} />
+          <JobProgress job={job} onStop={stop} byFile />
           {job.attempt && job.attempt > 1 ? <p className="card__fix">{z.attempt(job.attempt)}</p> : null}
           <p className="card__fix">{z.continues}</p>
         </>
@@ -333,10 +333,13 @@ function ListsLine({ onChecked }: { onChecked: () => void }) {
   );
 }
 
-export function JobProgress({ job, onStop }: { job: DownloadProgress; onStop: () => void }) {
+/** byFile: the bar follows the current file's bytes (encyclopedias: one file can take a day), with the time left. */
+export function JobProgress({ job, onStop, byFile }: { job: DownloadProgress; onStop: () => void; byFile?: boolean }) {
   // Stopping can take a moment (a site that is still connecting): say so, and don't take a second click.
   const [stopping, setStopping] = useState(false);
-  const pct = percent(job.done, job.total);
+  const fileShare = byFile && job.fileTotal > 0;
+  const pct = fileShare ? percent(job.fileReceived, job.fileTotal) : percent(job.done, job.total);
+  const eta = fileShare ? timeLeft(job.fileTotal - job.fileReceived, job.speed) : '';
   return (
     <div className="build" aria-live="polite">
       <div className="build__row">
@@ -351,6 +354,7 @@ export function JobProgress({ job, onStop }: { job: DownloadProgress; onStop: ()
         <p className="build__eta">
           {S.books.sizeOf(formatBytes(job.fileReceived), job.fileTotal ? formatBytes(job.fileTotal) : '')}
           {job.speed ? ' · ' + S.books.speed(formatBytes(job.speed)) : ''}
+          {eta ? ' · ' + eta : ''}
         </p>
       ) : null}
       <p className="build__eta">{S.books.continuesLater}</p>

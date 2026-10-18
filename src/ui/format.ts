@@ -121,6 +121,14 @@ export function formatBytes(bytes: number): string {
   return '0 KB';
 }
 
+/** "About 3 h 20 min left" for the bytes still to come at this speed; '' when the speed is not known yet. */
+export function timeLeft(bytesLeft: number, bytesPerSecond: number): string {
+  if (bytesPerSecond <= 0 || bytesLeft <= 0) return '';
+  const min = Math.round(bytesLeft / bytesPerSecond / 60);
+  if (min >= 90) return S.library.etaHours(Math.floor(min / 60), min % 60);
+  return S.library.eta(min);
+}
+
 /** Megabytes for "12.3 of 78 MB": one decimal below 10 MB. */
 export function megabytes(bytes: number): string {
   const mb = bytes / 1048576;
