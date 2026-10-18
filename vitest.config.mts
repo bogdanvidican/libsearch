@@ -6,5 +6,7 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     testTimeout: 30000,
+    // Set-up hooks build a real index (pdftotext) or bundle the downloader: slow when the suite runs in parallel.
+    hookTimeout: 60000,
   },
 });
