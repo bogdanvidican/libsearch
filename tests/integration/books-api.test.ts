@@ -29,6 +29,10 @@ function installedApp(name: string, main: string[]): string {
   fs.mkdirSync(lists, { recursive: true });
   fs.writeFileSync(path.join(lists, 'booklist-main.txt'), main.join('\n') + '\n');
   fs.copyFileSync(path.join(REPO, 'kit', 'booklists', 'booklist-local-template.txt'), path.join(lists, 'booklist-local-template.txt'));
+  fs.writeFileSync(
+    path.join(lists, 'manual-downloads.txt'),
+    'M|01 Medicine|Where There Is No Vet (Oxfam)|https://example.org/vet|button|6 parts\nM|04 Food|FAO Grain Storage|https://example.org/grain|print-to-pdf|\n'
+  );
   return appDir;
 }
 
@@ -183,6 +187,16 @@ describe('Get books API', () => {
     expect(r.status).toBe(200);
     expect(r.json.failures).toEqual([]);
     expect(r.json.missing).toBe(0);
+  });
+
+  it('lists the books to save by hand, offline, and remembers ticks in the library folder', async () => {
+    let r = await api.call('GET', '/api/manual');
+    expect(r.status).toBe(200);
+    expect(r.json.map((i: { title: string; done: boolean }) => `${i.title} ${i.done}`)).toEqual(['Where There Is No Vet (Oxfam) false', 'FAO Grain Storage false']);
+    r = await api.call('POST', '/api/manual/done', { id: 'M|04 Food|https://example.org/grain', done: true });
+    expect(r.status).toBe(200);
+    expect(r.json[1].done).toBe(true);
+    expect(JSON.parse(fs.readFileSync(path.join(lib, 'library-search-downloads.json'), 'utf8')).manualDone).toEqual(['M|04 Food|https://example.org/grain']);
   });
 
   it('open-url opens web addresses in Firefox and refuses anything else', async () => {

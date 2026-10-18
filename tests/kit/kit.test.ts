@@ -12,10 +12,11 @@ interface Entry {
   parts: string[];
 }
 
-/** Entry lines of every book list (comments and blank lines skipped, CR stripped - as 2-download-pdf-books.sh reads them). */
+/** Entry lines of every book list (comments and blank lines skipped, CR stripped - as 2-download-pdf-books.sh reads them).
+ *  The other lists in booklists/ (manual downloads, encyclopedias) have their own formats and tests. */
 function entries(): Entry[] {
   const out: Entry[] = [];
-  for (const file of fs.readdirSync(LISTS).filter((n) => n.endsWith('.txt')).sort()) {
+  for (const file of fs.readdirSync(LISTS).filter((n) => /^booklist-.*\.txt$/.test(n)).sort()) {
     fs.readFileSync(path.join(LISTS, file), 'utf8')
       .split('\n')
       .forEach((raw, i) => {

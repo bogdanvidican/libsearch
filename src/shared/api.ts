@@ -199,6 +199,24 @@ export interface BooksOverview {
   freeBytes?: number;
 }
 
+/** How a book to save by hand is saved: a download button, Print to PDF, a form first, or a zip to unpack. */
+export type ManualHow = 'button' | 'print-to-pdf' | 'form' | 'zip';
+
+/** One book to save by hand (Library -> Get books -> Save by hand). */
+export interface ManualItem {
+  /** "M|<folder>|<url>" */
+  id: string;
+  folder: string;
+  title: string;
+  url: string;
+  how: ManualHow;
+  note: string;
+  /** Ticked off by the user. */
+  done: boolean;
+  /** Not ticked, but a file with the title's words is already in the folder. */
+  auto: boolean;
+}
+
 export interface IndexStatus {
   exists: boolean;
   docs: number;

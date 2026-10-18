@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
 import { URL } from 'url';
-import { BooksOverview, BuildProgress, DownloadProgress, IndexStatus, Notice, OpenRequest, OpenResult, Settings, Status } from '../shared/api';
+import { BooksOverview, BuildProgress, DownloadProgress, IndexStatus, ManualItem, Notice, OpenRequest, OpenResult, Settings, Status } from '../shared/api';
 import { checkLibraryFolder, Config, effectiveRoots, expandHome, insideAppMessage, isInside } from './config';
 import { DB, breakStaleLock, isBusyError, openDb, readIndexerPid, removeStaleLock, withRetry } from './db';
 import { Kiwix } from './kiwix';
@@ -18,6 +18,8 @@ import { Updater, UpdaterOptions } from './update';
 import { findLibraryFiles, fingerprint } from '../indexer/walk';
 import { idleProgress } from '../downloader/books';
 import { booksOverview, destinationProblem, ListRef, markDone } from '../downloader/overview';
+import { manualItems, setManualDone } from '../downloader/manual';
+import { emptyState, loadState } from '../downloader/state';
 
 declare const __APP_VERSION__: string;
 
@@ -293,6 +295,13 @@ export class App {
 
   booksOverview(): BooksOverview {
     return booksOverview({ lists: this.bookLists(), roots: this.cfg.roots, appHome: this.cfg.appHome });
+  }
+
+  /** The books to save by hand, with the ticks kept in the first library folder. */
+  manualItems(): ManualItem[] {
+    const root = this.cfg.roots[0];
+    const state = root && fs.existsSync(root) ? loadState(root) : emptyState();
+    return manualItems(path.join(this.cfg.appDir, 'kit', 'booklists', 'manual-downloads.txt'), this.cfg.roots, state);
   }
 
   private downloadArgs(): string[] {
@@ -651,6 +660,17 @@ export class App {
         if (!id) throw new HttpError(400, 'id is required');
         markDone(this.downloadRoot(), id, body.done !== false);
         return this.send(res, 200, this.booksOverview());
+      }
+
+      case 'GET /api/manual':
+        return this.send(res, 200, this.manualItems());
+
+      case 'POST /api/manual/done': {
+        const body = await this.readBody(req);
+        const id = typeof body.id === 'string' ? body.id : '';
+        if (!id) throw new HttpError(400, 'id is required');
+        setManualDone(this.downloadRoot(), id, body.done !== false);
+        return this.send(res, 200, this.manualItems());
       }
 
       case 'POST /api/open-url': {
