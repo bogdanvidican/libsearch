@@ -31,11 +31,13 @@ export interface LibraryState {
     selected: string[];
     /** A download was running when the app closed: continue it at the next start. */
     resume: boolean;
+    /** Encyclopedias (by prefix) that failed in the last download, and why. */
+    failures: DownloadFailure[];
   };
 }
 
 export function emptyState(): LibraryState {
-  return { version: 1, books: { failures: [], collections: {}, done: [] }, manualDone: [], zims: { selected: [], resume: false } };
+  return { version: 1, books: { failures: [], collections: {}, done: [] }, manualDone: [], zims: { selected: [], resume: false, failures: [] } };
 }
 
 function strings(v: unknown): string[] {
@@ -70,6 +72,7 @@ export function loadState(root: string): LibraryState {
   if (raw.zims && typeof raw.zims === 'object') {
     s.zims.selected = strings(raw.zims.selected);
     s.zims.resume = raw.zims.resume === true;
+    s.zims.failures = failures(raw.zims.failures);
   }
   return s;
 }

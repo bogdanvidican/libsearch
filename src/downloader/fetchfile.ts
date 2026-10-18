@@ -79,7 +79,7 @@ function sizeOf(file: string): number {
 }
 
 /** Full size from "Content-Range: bytes 4-9/10", or 0. */
-function rangeTotal(res: http.IncomingMessage): number {
+export function rangeTotal(res: http.IncomingMessage): number {
   const m = /\/(\d+)\s*$/.exec(String(res.headers['content-range'] || ''));
   return m ? Number(m[1]) : 0;
 }
