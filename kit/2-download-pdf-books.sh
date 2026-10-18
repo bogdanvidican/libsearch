@@ -9,6 +9,7 @@ KIT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 shift "$LIBRARY_SHIFT"; cd "$LIBRARY" || exit 1
 UA="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:115.0) Gecko/20100101 Firefox/115.0"
 LOG="2-download-log.txt"; FAILED="2-failed-downloads.txt"
+ARCHIVE="${LIBRARY_KIT_ARCHIVE_BASE:-https://archive.org}"   # a local server in the app's tests
 
 # ---- preflight ---------------------------------------------------------
 if ! command -v curl >/dev/null 2>&1; then
@@ -94,10 +95,10 @@ scrape() { # folder page regex
 archive_item() { # folder identifier
   local dir="$1" id="$2" files
   echo "== archive.org: $id"
-  files=$(curl -sL -A "$UA" "https://archive.org/metadata/$id" | grep -oE '"name":"[^"]*\.pdf"' | sed -E 's/"name":"//; s/"$//' | grep -vE '_text\.pdf$')
-  [ -z "$files" ] && { printf '%s|(page)|https://archive.org/details/%s\n' "$dir" "$id" >> "$FAILED"; bad=$((bad+1)); return; }
+  files=$(curl -sL -A "$UA" "$ARCHIVE/metadata/$id" | grep -oE '"name":"[^"]*\.pdf"' | sed -E 's/"name":"//; s/"$//' | grep -vE '_text\.pdf$')
+  [ -z "$files" ] && { printf '%s|(page)|%s/details/%s\n' "$dir" "$ARCHIVE" "$id" >> "$FAILED"; bad=$((bad+1)); return; }
   while IFS= read -r f; do
-    fetch "$dir" "$(basename "$f")" "https://archive.org/download/$id/$(printf '%s' "$f" | sed 's/ /%20/g')"
+    fetch "$dir" "$(basename "$f")" "$ARCHIVE/download/$id/$(printf '%s' "$f" | sed 's/ /%20/g')"
   done <<< "$files"
 }
 
