@@ -40,6 +40,7 @@ const builds = [
   { ...nodeCommon, entryPoints: [join(root, 'src/main/preload.ts')], outfile: join(out, 'main/preload.js') },
   { ...nodeCommon, entryPoints: [join(root, 'src/server/server.ts')], outfile: join(out, 'server/server.js') },
   { ...nodeCommon, entryPoints: [join(root, 'src/indexer/indexer.ts')], outfile: join(out, 'indexer/indexer.js') },
+  { ...nodeCommon, entryPoints: [join(root, 'src/downloader/downloader.ts')], outfile: join(out, 'downloader/downloader.js') },
   {
     // The UI must also run in an old Firefox (fallback mode), so keep it at ES2017.
     entryPoints: [join(root, 'src/ui/main.tsx')],

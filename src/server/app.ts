@@ -4,17 +4,20 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as path from 'path';
 import { URL } from 'url';
-import { BuildProgress, IndexStatus, Notice, OpenRequest, Settings, Status } from '../shared/api';
-import { checkLibraryFolder, Config, effectiveRoots, expandHome } from './config';
+import { BooksOverview, BuildProgress, DownloadProgress, IndexStatus, Notice, OpenRequest, OpenResult, Settings, Status } from '../shared/api';
+import { checkLibraryFolder, Config, effectiveRoots, expandHome, insideAppMessage, isInside } from './config';
 import { DB, breakStaleLock, isBusyError, openDb, readIndexerPid, removeStaleLock, withRetry } from './db';
 import { Kiwix } from './kiwix';
-import { openDocument, readEpubEntry } from './opener';
+import { DownloadJob } from './jobs';
+import { openDocument, openUrl, readEpubEntry } from './opener';
 import { FileStamp, IndexStats, indexStats, indexedFileStamps, listCategories, listDocs, listProblems, resolveDocFile, searchBooks } from './search';
 import { loadSettings, saveSettings } from './settings';
 import { darkCss } from '../shared/darkPalette';
 import { hasCommand } from './tools';
 import { Updater, UpdaterOptions } from './update';
 import { findLibraryFiles, fingerprint } from '../indexer/walk';
+import { idleProgress } from '../downloader/books';
+import { booksOverview, destinationProblem, ListRef, markDone } from '../downloader/overview';
 
 declare const __APP_VERSION__: string;
 
@@ -46,9 +49,30 @@ const UI_TYPES: Record<string, string> = {
   '.map': 'application/json',
 };
 
+/** Test seams for downloads: local stand-ins for the internet and for Firefox. */
+export interface DownloadOptions {
+  checkUrl?: string;
+  archiveBase?: string;
+  mirror?: string;
+  minFreeMb?: number;
+  stallSeconds?: number;
+}
+
+export interface AppOptions {
+  updater?: UpdaterOptions;
+  /** build/downloader/downloader.js of this app unless given. */
+  downloaderPath?: string;
+  downloads?: DownloadOptions;
+  openUrl?: (url: string) => Promise<OpenResult>;
+}
+
 export class App {
   readonly kiwix: Kiwix;
   readonly updater: Updater;
+  /** Library -> Get books: the books download job. */
+  readonly books: DownloadJob;
+  private readonly dlOpts: DownloadOptions;
+  private readonly openUrl: (url: string) => Promise<OpenResult>;
   /** Set by server.ts: closes the app so the install script can replace it ("Restart now"). */
   onQuitForUpdate: (() => void) | null = null;
   private db: DB | null = null;
@@ -59,9 +83,13 @@ export class App {
   private pending: { at: number; value: number } | null = null;
   private port = 0;
 
-  constructor(readonly cfg: Config, readonly token: string, opts: { updater?: UpdaterOptions } = {}) {
+  constructor(readonly cfg: Config, readonly token: string, opts: AppOptions = {}) {
     this.kiwix = new Kiwix(cfg);
     this.updater = new Updater(cfg, opts.updater);
+    const downloader = opts.downloaderPath || path.join(cfg.appDir, 'build', 'downloader', 'downloader.js');
+    this.books = new DownloadJob(downloader, 'books');
+    this.dlOpts = opts.downloads || {};
+    this.openUrl = opts.openUrl || openUrl;
   }
 
   setPort(port: number): void {
@@ -164,6 +192,7 @@ export class App {
     if (!path.isAbsolute(p)) return err(`"${p}" is not a full path.`, 'Type the whole path, starting with / (for example /home/me/Library).');
     const c = checkLibraryFolder(p);
     if (!c.exists) return err(`The folder "${p}" doesn't exist.`, 'Check the spelling, or plug in the drive that holds it.');
+    if (isInside(p, this.cfg.appHome)) return err(insideAppMessage(p, this.cfg.appHome), 'Choose a folder outside the app, for example in your home folder.');
     if (!c.categories && !c.zims) {
       return err(
         `"${p}" has no topic folders (like "01 Medicine") and no encyclopedia files.`,
@@ -251,6 +280,57 @@ export class App {
     return this.build;
   }
 
+  // ---------- downloads (Library -> Get books) ----------
+
+  /** The book lists: the app's own, then the library's booklist-local.txt (books the user added). */
+  bookLists(): ListRef[] {
+    const dir = path.join(this.cfg.appDir, 'kit', 'booklists');
+    const lists: ListRef[] = ['booklist-main.txt', 'booklist-linux.txt'].map((n) => ({ name: n, path: path.join(dir, n), source: 'app' as const }));
+    const root = this.cfg.roots[0];
+    if (root) lists.push({ name: 'booklist-local.txt', path: path.join(root, 'booklist-local.txt'), source: 'library' });
+    return lists;
+  }
+
+  booksOverview(): BooksOverview {
+    return booksOverview({ lists: this.bookLists(), roots: this.cfg.roots, appHome: this.cfg.appHome });
+  }
+
+  private downloadArgs(): string[] {
+    const o = this.dlOpts;
+    const a: string[] = ['--log', path.join(this.cfg.logDir, 'downloads.log')];
+    if (o.checkUrl) a.push('--check-url', o.checkUrl);
+    if (o.archiveBase) a.push('--archive-base', o.archiveBase);
+    if (o.mirror) a.push('--mirror', o.mirror);
+    if (o.minFreeMb !== undefined) a.push('--min-free-mb', String(o.minFreeMb));
+    if (o.stallSeconds !== undefined) a.push('--stall-seconds', String(o.stallSeconds));
+    return a;
+  }
+
+  /** The library folder downloads may go into, or an HTTP 409 with the plain reason why not. */
+  private downloadRoot(): string {
+    const root = this.cfg.roots[0];
+    const problem = destinationProblem(root, this.cfg.appHome);
+    if (problem) throw new HttpError(409, problem.message, problem);
+    return root;
+  }
+
+  startBookDownloads(): DownloadProgress {
+    if (this.books.running()) return this.books.progress();
+    const root = this.downloadRoot();
+    // The library's own list, for books the user adds (the app never changes it afterwards).
+    const local = path.join(root, 'booklist-local.txt');
+    if (!fs.existsSync(local)) {
+      try {
+        fs.copyFileSync(path.join(this.cfg.appDir, 'kit', 'booklists', 'booklist-local-template.txt'), local);
+      } catch (e) {
+        // optional
+      }
+    }
+    const args = ['--library', root];
+    for (const l of this.bookLists()) args.push('--list', l.path);
+    return this.books.start(args.concat(this.downloadArgs()));
+  }
+
   // ---------- status ----------
 
   async status(rescan = false): Promise<Status> {
@@ -330,6 +410,7 @@ export class App {
       kiwix: await this.kiwix.status(),
       tools,
       update: this.updater.status(),
+      downloads: { books: this.books.progress(), zims: idleProgress() },
       notices,
     };
   }
@@ -555,6 +636,30 @@ export class App {
         return;
       }
 
+      case 'GET /api/books':
+        return this.send(res, 200, this.booksOverview());
+
+      case 'POST /api/books/download':
+        return this.send(res, 200, this.startBookDownloads());
+
+      case 'POST /api/books/cancel':
+        return this.send(res, 200, this.books.cancel());
+
+      case 'POST /api/books/done': {
+        const body = await this.readBody(req);
+        const id = typeof body.id === 'string' ? body.id : '';
+        if (!id) throw new HttpError(400, 'id is required');
+        markDone(this.downloadRoot(), id, body.done !== false);
+        return this.send(res, 200, this.booksOverview());
+      }
+
+      case 'POST /api/open-url': {
+        const body = await this.readBody(req);
+        const url = typeof body.url === 'string' ? body.url.trim() : '';
+        if (!/^https?:\/\/\S+$/i.test(url)) throw new HttpError(400, 'Only web addresses (http or https) can be opened.');
+        return this.send(res, 200, await this.openUrl(url));
+      }
+
       case 'GET /api/browse':
         return this.send(res, 200, await this.withDb((db) => listCategories(db), []));
 
@@ -612,6 +717,7 @@ export class App {
 
   shutdown(): void {
     this.updater.stop();
+    this.books.stop();
     if (this.indexer) {
       try {
         this.indexer.kill('SIGTERM');

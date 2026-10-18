@@ -35,6 +35,28 @@ function notFound(how: OpenResult['how'], message: string, fix?: string): OpenRe
   return { ok: false, how, error: { kind: 'error', code: 'open-failed', message, fix } };
 }
 
+/**
+ * A web page (a book to save by hand) in Firefox. The app window never goes online, so the server starts the
+ * browser. Only http(s) addresses - the caller checks.
+ */
+export async function openUrl(url: string): Promise<OpenResult> {
+  if (process.platform === 'darwin') {
+    const r = await launch('open', [url]);
+    return r.ok ? { ok: true, how: 'open' } : notFound('open', 'The web browser could not be started.');
+  }
+  const firefox = which('firefox');
+  if (firefox) {
+    const r = await launch(firefox, [url]);
+    if (r.ok) return { ok: true, how: 'firefox' };
+  }
+  const xdg = which('xdg-open');
+  if (xdg) {
+    const r = await launch(xdg, [url]);
+    if (r.ok) return { ok: true, how: 'xdg-open' };
+  }
+  return notFound('firefox', 'Firefox could not be started.', 'Install it:  sudo apt-get install firefox');
+}
+
 export async function openDocument(doc: DocFile, page?: number, q?: string): Promise<OpenResult> {
   if (doc.kind === 'epub') {
     const url = epubReaderUrl(doc, page);

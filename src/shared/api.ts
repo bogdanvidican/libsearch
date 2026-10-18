@@ -234,6 +234,8 @@ export interface Status {
   kiwix: KiwixStatus;
   tools: ToolStatus;
   update: UpdateStatus;
+  /** Library -> Get books: the books job and the encyclopedias job (idle when not running). */
+  downloads: { books: DownloadProgress; zims: DownloadProgress };
   notices: Notice[];
 }
 
@@ -305,7 +307,7 @@ export interface OpenRequest {
 
 export interface OpenResult {
   ok: boolean;
-  how: 'evince' | 'xdg-open' | 'open' | 'reader';
+  how: 'evince' | 'xdg-open' | 'open' | 'reader' | 'firefox';
   /** For EPUB (and anything shown in-app): same-origin URL for the reader view. */
   readerUrl?: string;
   error?: Notice;

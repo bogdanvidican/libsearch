@@ -126,6 +126,15 @@ describe('choosing the library folder in the app', () => {
     }
   });
 
+  it("refuses a library folder inside the app's folder", async () => {
+    const inside = path.join(tmp, 'apps', 'ui', 'books');
+    fs.mkdirSync(path.join(inside, '01 Medicine'), { recursive: true });
+    const r = await call('POST', '/api/settings', { libraryRoots: [inside] });
+    expect(r.status).toBe(400);
+    expect(r.json.error.code).toBe('bad-folder');
+    expect(r.json.error.message).toContain("is inside the app's folder");
+  });
+
   it('applies a chosen folder immediately, and can go back to automatic', async () => {
     const r = await call('POST', '/api/settings', { libraryRoots: [lib] });
     expect(r.status).toBe(200);
