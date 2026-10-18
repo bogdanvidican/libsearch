@@ -193,6 +193,17 @@ function realpathOr(p: string): string {
   }
 }
 
+/** True when `child` is `parent` or inside it (links followed: a link into the app counts as inside). */
+export function isInside(child: string, parent: string): boolean {
+  const rel = path.relative(realpathOr(parent), realpathOr(child));
+  return rel === '' || (rel.split(path.sep)[0] !== '..' && !path.isAbsolute(rel));
+}
+
+/** The text shown when a library folder is inside the app (books there would go with the app). */
+export function insideAppMessage(folder: string, appHome: string): string {
+  return `"${folder}" is inside the app's folder (${appHome}). Books kept there would be lost when the app is deleted or reinstalled.`;
+}
+
 export function resolveConfig(argv: string[], appDir: string, defaults: Partial<Config> = {}): Config {
   const args = parseArgs(argv);
   const app = realpathOr(appDir);

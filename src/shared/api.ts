@@ -171,6 +171,34 @@ export interface DownloadFailure {
   at: number;
 }
 
+/** One topic folder on Library -> Get books. Pages and archive.org items count by their files once known. */
+export interface BookTopic {
+  /** "01 Medicine" */
+  folder: string;
+  /** "Medicine" */
+  label: string;
+  listed: number;
+  present: number;
+  /** Failed in the last download (and not saved by hand since). */
+  failed: number;
+  /** Size of the topic's listed books on this computer. */
+  bytes: number;
+}
+
+export interface BooksOverview {
+  /** The library folder downloads go into, or null when there is none that can be used (see `problem`). */
+  destination: string | null;
+  /** Why nothing can be downloaded: no library folder, unplugged, read-only, or inside the app's own folder. */
+  problem?: Notice;
+  topics: BookTopic[];
+  missing: number;
+  /** Books that failed last time, minus the ones saved by hand since. */
+  failures: DownloadFailure[];
+  lastRun?: { finishedAt: number; downloaded: number; skipped: number; failed: number };
+  lists: { name: string; source: 'app' | 'github' | 'library'; entries: number }[];
+  freeBytes?: number;
+}
+
 export interface IndexStatus {
   exists: boolean;
   docs: number;
