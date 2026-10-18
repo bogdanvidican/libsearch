@@ -89,7 +89,7 @@ It writes `library-search-app/m0-report-<date>.txt`; paste it into `NOTES.md`.
 
 The repo root is this folder (`library-search-app/`). `kit/` holds the download kit that ships inside the app:
 the download scripts `1-…` to `5-…`, the kit guide `0-README-start-here.md`, the book lists in `kit/booklists/`,
-and the `6-*` launchers (copied into the kit folder by the install script).
+and the `6-*` scripts. Nothing is copied out of the app; downloads go into the library folder.
 
 1. Bump `version` in `package.json`, commit.
 2. `npm run check && npm run dist:linux-ia32` (optionally `npm run test:ia32`).
@@ -112,16 +112,19 @@ and the `6-*` launchers (copied into the kit folder by the install script).
 
 ## Installing on the CF-30
 
-- **With git + internet:** in the kit folder:
+- **With git + internet:** in the library folder (or anywhere):
   `git clone https://github.com/bogdanvidican/libsearch.git library-search-app` (the folder must be named
   `library-search-app`) then
   `bash library-search-app/kit/6-install-or-update-search-app.sh`
-  (it finds the repo from `git remote`, downloads the newest release, unpacks it into
-  `library-search-app/dist/library-search-linux-ia32/` and copies the `6-*` launchers into the kit folder).
-  Later updates: `git pull` (optional) and `bash 6-install-or-update-search-app.sh`.
+  (it finds the repo from `git remote`, downloads the newest release and unpacks it into
+  `library-search-app/dist/library-search-linux-ia32/`). It copies nothing into the library folder: the
+  download scripts and book lists are in the app's `resources/app/kit/` (the summary prints the path).
+  Later updates: the app updates itself; by hand, `bash library-search-app/kit/6-install-or-update-search-app.sh`.
 - **Private repo:** `GITHUB_TOKEN=<token> bash 6-install-or-update-search-app.sh`.
-- **No internet (USB stick):** copy the `.tar.gz` (+ `.sha256`) and `6-install-or-update-search-app.sh` from the
-  release into the kit folder, then `bash 6-install-or-update-search-app.sh library-search-linux-ia32-vX.Y.Z.tar.gz`.
+- **Fresh 16.04 (old certificates) or no internet (USB stick):** get the `.tar.gz` (+ `.sha256`) and
+  `6-install-or-update-search-app.sh` from the release page in Firefox (it has its own certificates) or a USB
+  stick, put them in one folder, then `bash 6-install-or-update-search-app.sh library-search-linux-ia32-vX.Y.Z.tar.gz`.
+  The certificate fix for curl (`1-fix-https-certificates.sh`) comes with the app, in its `kit` folder.
 - **Fallback Electron build:** `LIBRARY_SEARCH_ELECTRON=13 bash 6-install-or-update-search-app.sh` picks the `-e13` asset.
 
 The install script keeps the previous version as `….old` until the new one is in place, refuses to run as root,
@@ -147,11 +150,16 @@ Copies on 0.1.x need one manual update with the script first.
 `--launcher` only redoes this, `--remove-launcher` undoes it. Icons: `assets/icons/library-search.svg` →
 `npx electron scripts/make-icons.cjs` renders the PNGs.
 
-## Launchers (kit root)
+## Scripts in `kit/` (inside the app: `resources/app/kit/`)
+
+The download scripts `1-…` to `5-…` work on the library folder: the folder named as their first argument, or
+the current folder when it holds `NN Name` folders. They refuse folders inside the app (`kit/library-folder.sh`),
+so deleting or reinstalling the app never loses books. Script 2 reads `booklists/booklist-main.txt`,
+`booklist-linux.txt` and the library's own `booklist-local.txt`. See `kit/0-README-start-here.md`.
 
 | File | Purpose |
 | --- | --- |
-| `6-search-the-library.sh` / `.desktop` | start the app with `--disable-gpu`; retries with `--no-sandbox` if Chromium's sandbox fails; offers Firefox mode if the app can't start. `--firefox` runs the server on port 8090 and opens Firefox. Log: `library-search-app/logs/launcher.log` |
+| `6-search-the-library.sh` | start the app with `--disable-gpu`; retries with `--no-sandbox` if Chromium's sandbox fails; offers Firefox mode if the app can't start. `--firefox` runs the server on port 8090 and opens Firefox. Log: `library-search-app/logs/launcher.log` |
 | `6-build-search-index.sh` | index build in a terminal (`--full` to re-read everything), low CPU priority, Ctrl+C safe |
 | `6-install-or-update-search-app.sh` | install/update from GitHub, a URL or a local `.tar.gz` |
 

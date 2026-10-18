@@ -1,7 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=6 · Search the library
-Comment=One search box for all the books, Wikipedia, Khan Academy and Q&A sites (works offline)
-Exec=bash -c 'cd "$(dirname "$0")" && bash 6-search-the-library.sh' %k
-Terminal=false
-Icon=system-search

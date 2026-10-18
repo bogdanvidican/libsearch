@@ -248,7 +248,7 @@ export const DOCS: DocSection[] = [
           '**Rebuild everything** reads every book again. Only needed if search results seem wrong.',
         ],
       },
-      { type: 'cmd', label: 'The same from a terminal in the kit folder (add `--full` to read everything again):', text: 'bash 6-build-search-index.sh' },
+      { type: 'cmd', label: 'The same from a terminal in the app’s `kit` folder (add `--full` to read everything again):', text: 'bash 6-build-search-index.sh' },
       { type: 'h', text: 'Books that can’t be searched' },
       {
         type: 'p',
@@ -360,9 +360,9 @@ export const DOCS: DocSection[] = [
       {
         type: 'steps',
         items: [
-          'On a computer with internet, open the releases page below. Download `library-search-linux-ia32-vX.Y.Z.tar.gz` and its `.sha256` file, and copy both onto a USB stick.',
-          'Copy both files into the kit folder on this computer.',
-          'Close Library Search, open a terminal in the kit folder and run the command below (with the real file name).',
+          'On a computer with internet, open the releases page below. Download `library-search-linux-ia32-vX.Y.Z.tar.gz`, its `.sha256` file and `6-install-or-update-search-app.sh`, and copy them onto a USB stick.',
+          'Copy the three files into one folder on this computer.',
+          'Close Library Search, open a terminal in that folder and run the command below (with the real file name).',
         ],
       },
       { type: 'cmd', label: 'Releases page:', text: RELEASES },
@@ -380,7 +380,7 @@ export const DOCS: DocSection[] = [
         type: 'qa',
         q: 'The app window doesn’t open',
         a: [
-          'Start the simple version in Firefox: it has the same search. In a terminal in the kit folder, run `bash 6-search-the-library.sh --firefox`.',
+          'Start the simple version in Firefox: it has the same search. In a terminal in the app’s `kit` folder (in the app folder: `dist/library-search-linux-ia32/resources/app/kit`), run `bash 6-search-the-library.sh --firefox`.',
           'Keep the small window that appears open while you use it; closing it stops the library.',
         ],
       },
@@ -448,7 +448,8 @@ export const DOCS: DocSection[] = [
         items: [
           'The app keeps its index, settings and logs in its own folder. If it may not write there, it uses `~/.local/share/library-search` instead.',
           'Deleting the `index` folder is safe: the app offers to build it again.',
-          'In the kit folder, `6-search-the-library.sh` starts the app, `6-build-search-index.sh` builds the index in a terminal, and `6-install-or-update-search-app.sh` installs or updates the app.',
+          'The app’s `kit` folder (in the app folder: `dist/library-search-linux-ia32/resources/app/kit`) holds `6-search-the-library.sh` (starts the app), `6-build-search-index.sh` (builds the index in a terminal), `6-install-or-update-search-app.sh` (installs or updates the app), and the download scripts with their book lists.',
+          'Downloaded books and encyclopedias always go in your library folder, never inside the app, so deleting or reinstalling the app keeps them.',
         ],
       },
     ],

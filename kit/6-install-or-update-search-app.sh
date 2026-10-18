@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Installs or updates the Library Search app (step 6). Run it from the kit folder, without sudo.
+# Installs or updates the Library Search app (step 6). Run it without sudo, from any folder.
 #   bash 6-install-or-update-search-app.sh                         newest release from GitHub (needs internet)
 #   bash 6-install-or-update-search-app.sh <file.tar.gz>           from a file, e.g. copied from a USB stick
 #   bash 6-install-or-update-search-app.sh https://.../x.tar.gz    from a direct link
 # The app can live anywhere; it doesn't have to be inside the library. It is installed into its own folder:
 # the git checkout this script is in, the folder used last time, <kit>/library-search-app, or ~/library-search.
+# The download scripts and book lists come with the app (resources/app/kit/); nothing is copied into the library.
 # Options:
 #   --dir <folder>       install the app into this folder instead
-#   --kit <folder>       also put the 6-* shortcuts into this "Ubuntu CF-30 Kit" folder (normally found automatically)
 #   --pin / --no-pin     add the app to the sidebar (launcher) without asking / don't add it
 #   --launcher           only (re)create the menu entry + sidebar icon, don't download anything
 #   --remove-launcher    remove the menu entry and the sidebar icon (the app itself stays)
@@ -170,7 +170,6 @@ remove_launcher() {
 SELF="$(readlink -f "$0" 2>/dev/null || echo "$0")"
 SELF_DIR="$(cd "$(dirname "$SELF")" && pwd)"
 
-KIT=""
 APPDIR_OPT=""
 SRC=""
 PIN=""           # yes | no | "" (ask)
@@ -182,7 +181,7 @@ APPDIR=""
 DEST=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --kit) KIT="$2"; shift 2;;
+    --kit) shift 2;;  # older versions copied the 6-* shortcuts into a kit folder; nothing is copied any more
     --dir) APPDIR_OPT="$2"; shift 2;;
     --pin) PIN=yes; shift;;
     --no-pin) PIN=no; shift;;
@@ -234,14 +233,6 @@ else APPDIR="$HOME/library-search"; fi
 mkdir -p "$APPDIR" 2>/dev/null || die "Can't create the app folder: $APPDIR"
 APPDIR="$(cd "$APPDIR" && pwd)"
 
-# Optional: the kit folder, so the 6-* shortcuts sit next to the other numbered scripts.
-if [ -z "$KIT" ]; then
-  if looks_like_kit "$(dirname "$APPDIR")"; then KIT="$(dirname "$APPDIR")"
-  elif looks_like_kit "$SELF_DIR"; then KIT="$SELF_DIR"
-  elif looks_like_kit "$PWD"; then KIT="$PWD"; fi
-fi
-if [ -n "$KIT" ]; then KIT="$(cd "$KIT" 2>/dev/null && pwd)" || die "Kit folder not found: $KIT"; fi
-
 if [ "$MODE" = "remove-launcher" ]; then remove_launcher; exit 0; fi
 if [ "$MODE" = "launcher" ]; then install_launcher; exit $?; fi
 
@@ -263,12 +254,22 @@ trap 'rm -rf "$WORK"' EXIT
 
 sha256_of() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'; else shasum -a 256 "$1" | awk '{print $1}'; fi; }
 
+# The certificate fix (step 1) comes with the app. Before the app is installed, Firefox (it has its own
+# certificates) or a USB stick gets the release file instead.
+cert_hint() {
+  local f
+  for f in "$APPDIR"/dist/library-search-linux-*/resources/app/kit/1-fix-https-certificates.sh; do
+    case "$f" in *.old/*) continue;; esac
+    [ -f "$f" ] && { printf 'If it mentions certificates, run once:\n    sudo bash "%s"' "$f"; return 0; }
+  done
+  printf 'On a fresh Ubuntu 16.04 (old certificates): download the .tar.gz and this script\nfrom the GitHub release page in Firefox instead.'
+}
+
 download() { # url, output, [extra curl args...]
   local url="$1" out="$2"; shift 2
   echo "Downloading $url"
   if ! curl -fL --retry 3 --progress-bar "$@" -o "$out" "$url"; then
-    die "Download failed. Check the internet connection. If it mentions certificates, run once:
-    sudo bash 1-fix-https-certificates.sh
+    die "Download failed. Check the internet connection. $(cert_hint)
 Or copy the .tar.gz on a USB stick and run:  bash 6-install-or-update-search-app.sh <file.tar.gz>"
   fi
 }
@@ -312,7 +313,7 @@ else
       "https://api.github.com/repos/$REPO/releases/latest" -o "$WORK/release.json"
   fi || die "Couldn't read the release list from GitHub ($REPO).
 If the repo is private: GITHUB_TOKEN=<token> bash 6-install-or-update-search-app.sh
-If it mentions certificates, run once:  sudo bash 1-fix-https-certificates.sh"
+$(cert_hint)"
 
   # api_url <TAB> browser_url <TAB> name   (python3 is on every Ubuntu 16.04; grep fallback for public repos)
   if command -v python3 >/dev/null 2>&1; then
@@ -395,40 +396,19 @@ fi
 CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/library-search"
 mkdir -p "$CONF_DIR" 2>/dev/null && printf '%s\n' "$APPDIR" >"$CONF_DIR/app-home"
 
-# --- 4. launchers into the kit folder (temp file + rename, so updating this very script is safe) --------
-copied=0
-for f in "$DEST/resources/app/kit"/6-*; do
-  [ -n "$KIT" ] || break
-  [ -f "$f" ] || continue
-  name="$(basename "$f")"
-  tmp="$KIT/.$name.tmp.$$"
-  if cp "$f" "$tmp" && chmod +x "$tmp" && mv -f "$tmp" "$KIT/$name"; then
-    copied=$((copied + 1))
-  else
-    rm -f "$tmp"
-    echo "!! couldn't copy $name to $KIT"
-  fi
-done
 rm -rf "$DEST.old"
 
-# The kit's double-click launcher uses the app icon too, once it is installed.
 echo
 install_launcher || true
-if [ -n "$KIT" ] && [ -f "$ICON_PATH" ] && [ -f "$KIT/6-search-the-library.desktop" ]; then
-  sed -i "s|^Icon=.*|Icon=$ICON_PATH|" "$KIT/6-search-the-library.desktop" 2>/dev/null
-fi
 
 echo
 echo "Library Search: $OLD_VER -> $NEW_VER"
 echo "Installed in:   $DEST"
-if [ -n "$KIT" ]; then echo "Launchers:      $copied file(s) copied to $KIT"; fi
 echo
 echo "Start it: click Library Search in the sidebar, or search for it in the Dash."
-if [ -n "$KIT" ]; then
-  echo "In the kit folder you can also double-click \"6 · Search the library\" or run:  bash 6-search-the-library.sh"
-  echo "(First time double-clicking: right-click it -> Properties -> Permissions -> \"Allow executing file as program\".)"
-fi
 echo "The first time, the app asks where your library is if it isn't next to the app."
+echo "Download scripts (they work without the app), inside your library folder:"
+echo "  bash \"$DEST/resources/app/kit/2-download-pdf-books.sh\""
 if [ "$OLD_VER" = "not installed" ]; then
   echo "On first start the app offers to build the book index (about an hour on the CF-30)."
 fi
