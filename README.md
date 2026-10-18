@@ -150,6 +150,15 @@ Copies on 0.1.x need one manual update with the script first.
 `--launcher` only redoes this, `--remove-launcher` undoes it. Icons: `assets/icons/library-search.svg` →
 `npx electron scripts/make-icons.cjs` renders the PNGs.
 
+## Get books (downloads inside the app)
+
+Library -> **Get books** downloads the books on `kit/booklists/` into the first library folder (never inside the
+app), lists the books to save by hand (`manual-downloads.txt`), and downloads encyclopedias (`encyclopedias.txt`)
+with the Kiwix reader. The work runs in `build/downloader/downloader.js`, a child process of the server; the
+library's notes are `<library>/library-search-downloads.json`. New lists are fetched from GitHub between
+releases (`src/server/lists.ts`). Tests: `tests/downloader/*`, `tests/integration/{books-api,zims-api,lists,
+download-parity}.test.ts` (the parity test runs `2-download-pdf-books.sh` and the app on one fake site).
+
 ## Scripts in `kit/` (inside the app: `resources/app/kit/`)
 
 The download scripts `1-…` to `5-…` work on the library folder: the folder named as their first argument, or
@@ -168,6 +177,7 @@ so deleting or reinstalling the app never loses books. Script 2 reads `booklists
 ```
 src/shared/  API types, dark palette  src/server/  HTTP API, search, kiwix proxy, opener, updates
 src/indexer/ PDF/EPUB → FTS5  src/main/    Electron shell + preload
+src/downloader/ Get books: lists, downloads, encyclopedias (child process)
 src/ui/      React app        kit/         download scripts, book lists, launchers
 scripts/     build, package, docker ia32 test, m0-check
 tests/       vitest + fixtures (tests/fixtures/library is a tiny fake library)

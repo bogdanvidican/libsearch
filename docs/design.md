@@ -21,6 +21,8 @@ Status: v0.1 being implemented; the UI is refined iteratively on the running app
 | Download kit | Scripts 1-5, the kit guide and the book lists (`kit/booklists/`) live in the app and arrive with every update; there is no separate kit folder and the installer copies nothing out of the app (`--kit` is accepted and ignored). Scripts 2-5 work on the library folder (first argument, else the current folder when it holds `NN Name` folders; `kit/library-folder.sh`). The user's own list is `<library>/booklist-local.txt` (created from `booklist-local-template.txt`; updates never touch it). **Downloaded resources never live inside the app home**: books, ZIMs, kiwix-tools, the user's list and logs stay in the library folder, so deleting or reinstalling the app keeps them; the scripts refuse a library inside the app home. | Owner decision (2026-10-18): an old hand-copied kit with a stale list said "nothing new to download"; the app folder is replaced on every update and may be deleted. |
 | Updates | The app updates itself from the GitHub releases of the (public) repo: on by default, switch on Settings → Updates. Only the **server** process goes online, only to GitHub; the window stays zero-network. Download → sha256 check → installed by `6-install-or-update-search-app.sh` when the app closes, or at once on "Restart now". | Owner request (2026-10-16), reversing HANDOFF's "no update checks". Offline nothing happens. Reusing the install script keeps one tested swap path (keep `.old` until the new version is in). |
 
+| Downloads in the app (K2-K5, 2026-10-18) | Library -> **Get books** (`#/books`, tabs Books on the lists / Save by hand / Encyclopedias). One downloader program (`build/downloader/downloader.js`) runs as a child process of the server, like the indexer, with two jobs that may run side by side: `books` (the F/S/A lists, the same rules as `2-download-pdf-books.sh`; a parity test runs both on one fake site) and `zims` (Kiwix .zim files and kiwix-tools; resume across dropped connections, renamed only when whole, FAT32 and free-space checks). The library's bookkeeping is `<library>/library-search-downloads.json` (failures with plain reasons, books saved by hand, the files each page / archive.org item produced, the encyclopedia choice and a "continue at next start" mark), so it travels with the books. Firefox is started by the server for web pages (`/api/open-url`, http(s) only). New lists come from GitHub between releases (`src/server/lists.ts`). | Owner request (handoff K2-K5); the window stays zero-network, Electron's own CA store makes HTTPS work on 16.04 (checked in the i386 container). |
+
 ## Layout
 
 ```
@@ -28,6 +30,7 @@ library-search-app/
   src/shared/        shared by server, Electron main + UI: API types (api.ts), dark-mode palette (darkPalette.ts)
   src/server/        HTTP server, search, kiwix, opener, config, db
   src/indexer/       walk + pdftotext/pdfinfo + EPUB reader + writer
+  src/downloader/    book lists, link rules, validation, one-file download (resume), books + encyclopedia jobs, overviews
   src/main/          Electron main + preload
   src/ui/            React app (index.html, main.tsx, components, styles.css)
   kit/               download scripts 1-5, 6-* launchers, kit guide, booklists/ (all ship inside the app)
@@ -64,6 +67,7 @@ Packaged app: `dist/library-search-linux-ia32/library-search` (Electron); app fi
 | --- | --- | --- |
 | `build/main/main.js` | `library-search [flags]` (Electron) | `--library-root <dir>` (repeatable), `--data-dir <dir>`, `--kiwix-port 8080`, `--kiwix-serve <path>`, `--no-update`, `--self-test` (implies `--no-update`) (load UI, check `/api/status`, print JSON report, exit 0/1), Chromium flags like `--disable-gpu`, `--no-sandbox` |
 | `build/server/server.js` | `ELECTRON_RUN_AS_NODE=1 library-search resources/app/build/server/server.js [flags]` (or `node` on the Mac) | same root/data/kiwix flags, `--port <n>` (default 0 = random in Electron mode, 8090 in browser mode), `--mode electron\|browser`, `--open-browser`, `--no-kiwix-autostart`, `--no-update` (or `LIBRARY_SEARCH_NO_UPDATE=1`). Ready: `process.send({type:'ready', url, port, token})` when forked, and prints `LIBRARY_SEARCH_READY <url>` on stdout. |
+| `build/downloader/downloader.js` | same as server, started by the server | `--job books --library <dir> --list <file>… [--check-url] [--archive-base] [--min-free-mb 500] [--stall-seconds 60]`, or `--job zims --library <dir> --kiwix-dir <dir> --list encyclopedias.txt --zim <prefix>… [--mirror] [--retries 200] [--retry-seconds 20] [--stall-seconds 120]`; `--log <file>`, `--json`. IPC `{type:'progress'}` and `{type:'zim-done', file}`; exit 0 done / 1 failed / 3 stopped |
 | `build/indexer/indexer.js` | same as server | root/data flags, `--full` (re-index everything), `--json` (JSON-lines progress on stdout: `{"type":"progress",…BuildProgress}`), exit 0 ok / 1 failed / 3 cancelled (SIGTERM) |
 
 ## Index schema (SQLite FTS5)
@@ -113,12 +117,22 @@ All `/api/*` calls carry header `X-Token` (token is injected into index.html as 
 | GET | `/api/update` (also `Status.update`) | `UpdateStatus` |
 | POST | `/api/update/check` / `/api/update/download` | `UpdateStatus` (check waits for GitHub; a download runs in the background) |
 | POST | `/api/update/install` | `UpdateStatus` `installing`, then the app closes ("Restart now") |
+| GET | `/api/books` | `BooksOverview` (per topic: on the list / here / failed; destination or the problem with it; offline-safe) |
+| POST | `/api/books/download` / `/api/books/cancel` | `DownloadProgress` (also `Status.downloads.books`); 409 with the problem when the library folder can't be used |
+| POST | `/api/books/done` `{id, done}` | `BooksOverview` (book saved by hand) |
+| GET / POST | `/api/manual`, `/api/manual/done` `{id, done}` | `ManualItem[]` (books to save by hand, ticks) |
+| GET | `/api/zims` | `EncyclopediasOverview` |
+| POST | `/api/zims/download` `{ids}` / `/api/zims/cancel` | `DownloadProgress` (also `Status.downloads.zims`) |
+| POST | `/api/lists/check` | `ListsStatus` (also `Status.lists`) |
+| POST | `/api/open-url` `{url}` | `OpenResult` (`firefox`; http(s) only) |
 | GET | `/epub/<docId>/<path in zip>` | file from inside an EPUB |
 | GET | `/content/…`, `/skin/…`, `/catalog/…`, `/search…`, `/random…`, `/raw/…`, `/catch/…`, `/viewer…` | proxied to kiwix-serve |
 
 ## UI (1024×768, touch)
 
 Guidelines: WCAG 2.2 AA (text contrast ≥ 4.5:1, visible focus ring, targets ≥ 44 px, `prefers-reduced-motion`), Nielsen heuristics (system status always visible, plain-language errors with the fix, undo/back everywhere), semantic landmarks + ARIA live region for result counts. Base font 16 px; result titles 18 px.
+
+Get books (`#/books`, `#/books/manual`, `#/books/encyclopedias`; the header keeps Library highlighted): a download card (where the books go, free space, Download missing books (N), progress with Stop -> "Stopping…", Update index afterwards), where the lists come from with **Check for new lists**, books per topic, and the failures with Open in Firefox / Mark as done; Save by hand: the 38 items grouped by topic with tick boxes; Encyclopedias: tick boxes with sizes and state, FAT32 / reader notices, try number and "continues after a restart".
 
 Screens (hash routes): `#/` home (big search, example chips, category tiles) · `#/search?q=&f=` results (filter chips: All · Books · Wikipedia & reference · Khan Academy · Q&A; category select for books) · `#/read?u=` reader (toolbar: Back to results, ‹ ›, Find, Open in Firefox) · `#/browse[/<category>]` · `#/library` (library folders, then two columns of about equal height: book index + "books that can't be searched" | Kiwix status/start + helper programs) · `#/settings` (app settings, not about the library: Appearance with the dark colors, Help, Updates, About) · `#/docs[/<section>]` the guide, opened from Settings → Help (and "How should the library folder look?" in the folder chooser): table of contents + one section at a time with Previous/Next; sections Getting started, Searching, Opening books and articles, Setting up your library folder, The book index, Encyclopedias, Helper programs, Appearance and updates, When something goes wrong, Where things are kept. Content is data in `src/ui/docs.ts` (`**bold**` = a button/page name, `` `code` `` = a command), offline like everything else; two blocks are live (installed helper programs, this computer's folders) and commands have a Copy button. `tests/ui/docs.test.tsx` checks every quoted button name still matches `strings.ts`, links resolve, and each section renders.
 

@@ -85,7 +85,8 @@ From a terminal:
 - Other phones/laptops on the same Wi-Fi or network cable can open it too - the start script prints the address.
 - Use an ext4 or exFAT drive. FAT32 USB sticks can't hold files over 4 GB (the script warns and skips those).
   exFAT on 16.04 needs:  `sudo apt-get install exfat-fuse exfat-utils`
-- Edit the script to turn items on/off (full English Wikipedia, 119 GB, is off; an app update undoes such edits).
+- Which ones: the "yes" lines of `<kit>/booklists/encyclopedias.txt` (full English Wikipedia, 119 GB, and Khan Academy are "no").
+  To pick others, use the app: **Library -> Get books -> Encyclopedias**.
   Khan Academy has its own script - see below.
 
 ## 3. Manual downloads in Firefox
