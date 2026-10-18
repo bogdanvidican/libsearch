@@ -168,6 +168,37 @@ else
   else bad "update install: exit $rc, status '$(cat "$U/status" 2>/dev/null)' (see update-install.log)"; fi
 fi
 
+# --- (g) the kit's download script with xenial's bash 4.3 + curl 7.47 ------------------------------------------
+# It works on a library folder outside the app and reads the app's book lists plus the library's own
+# booklist-local.txt. A small server on Electron's Node stands in for the internet.
+section "(g) 2-download-pdf-books.sh with xenial's bash + curl"
+G=/tmp/kit-g
+L="/tmp/Community Rebuild Library/Library & Co (g)"
+rm -rf "$G" "/tmp/Community Rebuild Library" && cp -r "$APPRES/kit" "$G" && mkdir -p "$L/01 Medicine"
+echo 'F|02 Water & Sanitation|Main_Book.pdf|http://127.0.0.1:18090/pdf/main%20(1).pdf?a=1&b=2' >"$G/booklists/booklist-main.txt"
+echo 'F|16 Linux & Ubuntu|Linux_Book.pdf|http://127.0.0.1:18090/pdf/linux.pdf' >"$G/booklists/booklist-linux.txt"
+echo 'F|99 Mine|Local_Book.pdf|http://127.0.0.1:18090/pdf/local.pdf' >"$L/booklist-local.txt"
+ELECTRON_RUN_AS_NODE=1 "$BIN" -e '
+require("http").createServer(function (q, s) {
+  if (q.url.indexOf("/pdf/") === 0) s.end("%PDF-1.4\n%test\n"); else s.end("ok");
+}).listen(18090, "127.0.0.1");' >"$OUT/kit-server.log" 2>&1 &
+KIT_SERVER=$!
+for _ in $(seq 1 120); do
+  [ "$(curl -s --max-time 5 http://127.0.0.1:18090/ 2>/dev/null)" = "ok" ] && break
+  kill -0 "$KIT_SERVER" 2>/dev/null || break
+  sleep 1
+done
+LIBRARY_KIT_CHECK_URL=http://127.0.0.1:18090/ timeout 300 bash "$G/2-download-pdf-books.sh" "$L" </dev/null >"$OUT/kit-download.log" 2>&1
+rc=$?
+kill "$KIT_SERVER" 2>/dev/null
+missing=""
+for f in "02 Water & Sanitation/Main_Book.pdf" "16 Linux & Ubuntu/Linux_Book.pdf" "99 Mine/Local_Book.pdf"; do
+  [ "$(head -c 4 "$L/$f" 2>/dev/null)" = "%PDF" ] || missing="$missing [$f]"
+done
+if [ $rc -eq 0 ] && [ -z "$missing" ]; then
+  ok "2-download-pdf-books.sh: the app's lists + the library's booklist-local.txt downloaded into the library (bash $BASH_VERSION, $(curl --version | head -n 1 | cut -d' ' -f1-2))"
+else bad "2-download-pdf-books.sh: exit $rc, not downloaded:${missing:- none} (see kit-download.log)"; fi
+
 echo
 echo "== Summary =="
 printf '%s\n' "${RESULTS[@]}"
