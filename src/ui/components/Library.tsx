@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { CircleCheck, CircleAlert, Database, Globe, Info, LoaderCircle, Play, RefreshCw, Square, Wrench } from 'lucide-react';
-import type { DocSummary, Status } from '../../shared/api';
+import { CircleCheck, CircleAlert, Database, Download, Globe, Info, LoaderCircle, Play, RefreshCw, Square, Wrench } from 'lucide-react';
+import type { BooksOverview, DocSummary, Status } from '../../shared/api';
+import { navigate } from '../router';
 import { api } from '../api';
 import { useApp } from '../context';
 import { etaText, formatDate, kiwixFix, kiwixLabel, kiwixTone, percent } from '../format';
@@ -39,6 +40,7 @@ export function Library() {
           <Problems st={st} />
         </div>
         <div className="page-col">
+          <GetBooksCard st={st} />
           <KiwixCard st={st} />
           <ToolsCard st={st} />
         </div>
@@ -126,6 +128,29 @@ function IndexCard({ st }: { st: Status }) {
           </div>
         </>
       )}
+    </section>
+  );
+}
+
+/** How many listed books are missing, and the way to Library -> Get books. */
+function GetBooksCard({ st }: { st: Status }) {
+  const job = st.downloads ? st.downloads.books : null;
+  const running = !!job && job.running;
+  const { data } = useLoad<BooksOverview>(
+    'books-card:' + (running ? 'running' : String((job && job.finishedAt) || 0)) + ':' + st.roots.join('|'),
+    () => api.books()
+  );
+  const text = running && job ? S.books.card.running(job.done, job.total) : data ? (data.missing ? S.books.card.missing(data.missing) : S.books.card.none) : '';
+  return (
+    <section className="card">
+      <CardHead icon={<Download size={22} />} title={S.books.title} tone={running ? 'busy' : data && data.missing ? 'warn' : data ? 'ok' : undefined} />
+      {text ? <p className="card__text">{text}</p> : null}
+      <div className="btn-row">
+        <button type="button" className="btn btn--primary" onClick={() => navigate({ name: 'books', tab: 'lists' })}>
+          <Download size={18} aria-hidden="true" />
+          {S.books.card.open}
+        </button>
+      </div>
     </section>
   );
 }

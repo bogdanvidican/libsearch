@@ -4,12 +4,18 @@ import type { SourceGroup } from '../shared/api';
 
 export type Filter = 'all' | SourceGroup;
 
+export type BooksTab = 'lists' | 'manual' | 'zims';
+/** Tab <-> the last part of its address (#/books, #/books/manual, #/books/encyclopedias). */
+const BOOKS_TABS: Record<BooksTab, string> = { lists: '', manual: 'manual', zims: 'encyclopedias' };
+
 export type Route =
   | { name: 'home' }
   | { name: 'search'; q: string; f: Filter; c: string }
   | { name: 'read'; u: string; t: string }
   | { name: 'browse'; folder: string }
   | { name: 'library' }
+  /** Library -> Get books, one tab per kind of download. */
+  | { name: 'books'; tab: BooksTab }
   | { name: 'settings' }
   /** The guide (Settings -> Guide); section = a DocSection id, '' = the first. */
   | { name: 'docs'; section: string };
@@ -48,6 +54,10 @@ export function parseHash(hash: string): Route {
       return { name: 'browse', folder: parts.length > 1 ? safeDecode(parts.slice(1).join('/')) : '' };
     case 'library':
       return { name: 'library' };
+    case 'books': {
+      const tab = (Object.keys(BOOKS_TABS) as BooksTab[]).filter((t) => BOOKS_TABS[t] === (parts[1] || ''))[0];
+      return { name: 'books', tab: tab || 'lists' };
+    }
     case 'settings':
       return { name: 'settings' };
     case 'docs':
@@ -86,6 +96,8 @@ export function routeToHash(r: Route): string {
       return r.folder ? '#/browse/' + encodeURIComponent(r.folder) : '#/browse';
     case 'library':
       return '#/library';
+    case 'books':
+      return BOOKS_TABS[r.tab] ? '#/books/' + BOOKS_TABS[r.tab] : '#/books';
     case 'settings':
       return '#/settings';
     case 'docs':

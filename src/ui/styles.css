@@ -2662,3 +2662,75 @@ mark {
     margin-bottom: 16px;
   }
 }
+
+/* Library -> Get books: tabs, the topic table, the list of books that failed */
+.books-tabs {
+  margin: 0 0 16px;
+}
+.books__path {
+  word-break: break-all;
+}
+.topics {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.topics th,
+.topics td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.topics thead th {
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.topics tbody th {
+  font-weight: 600;
+}
+.topics .num {
+  text-align: right;
+  width: 12%;
+  white-space: nowrap;
+}
+.topics__missing {
+  color: var(--warn);
+  font-weight: 700;
+}
+.topics__failed {
+  color: var(--bad);
+  font-weight: 700;
+}
+.failures {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+.failure {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: var(--surface);
+}
+.failure + .failure {
+  border-top: 1px solid var(--border);
+}
+.failure__file {
+  font-weight: 700;
+  word-break: break-all;
+}
+.failure__folder,
+.failure__reason {
+  font-size: 15px;
+  color: var(--text-2);
+}
+.failure .btn-row {
+  margin-top: 6px;
+}

@@ -2,7 +2,9 @@
 // server injects into index.html. Works the same in Electron and in Firefox (fallback mode).
 import type {
   BookSearchResponse,
+  BooksOverview,
   BuildProgress,
+  DownloadProgress,
   Category,
   DocSummary,
   IndexStatus,
@@ -127,6 +129,14 @@ export const api = {
   updateDownload: () => request<UpdateStatus>('POST', '/api/update/download', {}),
   /** Starts the install script and closes the app; it opens again when the update is in. */
   updateInstall: () => request<UpdateStatus>('POST', '/api/update/install', {}),
+  /** Library -> Get books. */
+  books: () => request<BooksOverview>('GET', '/api/books'),
+  booksDownload: () => request<DownloadProgress>('POST', '/api/books/download', {}),
+  booksCancel: () => request<DownloadProgress>('POST', '/api/books/cancel', {}),
+  /** "Mark as done": the book was saved by hand (or undo it). */
+  booksDone: (id: string, done: boolean) => request<BooksOverview>('POST', '/api/books/done', { id, done }),
+  /** A web page in Firefox (the app window itself never goes online). */
+  openUrl: (url: string) => request<OpenResult>('POST', '/api/open-url', { url }),
 };
 
 /** URL that opens a reader path in an outside browser (Firefox). ZIM pages go straight to kiwix-serve. */

@@ -201,7 +201,23 @@ function status() {
     },
     tools: { pdftotext: true, pdfinfo: true, evince: true, firefox: true },
     update: updateStatus(),
+    downloads: { books: IDLE_DOWNLOAD, zims: IDLE_DOWNLOAD },
     notices: [],
+  };
+}
+
+const IDLE_DOWNLOAD = { running: false, phase: 'idle', done: 0, total: 0, currentFile: '', fileReceived: 0, fileTotal: 0, bytes: 0, speed: 0, downloaded: 0, skipped: 0, failed: 0 };
+
+function booksOverview() {
+  return {
+    destination: '/home/you/Community Library',
+    topics: CATEGORIES.map((c, i) => ({ folder: c.folder, label: c.label, listed: c.docs + (i % 3), present: c.docs, failed: i % 4 === 0 ? 1 : 0, bytes: c.docs * 4e6 })),
+    missing: 7,
+    failures: [
+      { id: '01 Medicine|Special_Forces_Medical_Handbook_ST31-91B.pdf', folder: '01 Medicine', file: 'Special_Forces_Medical_Handbook_ST31-91B.pdf', url: 'https://irp.fas.org/doddir/milmed/sfhandbook.pdf', code: 'empty', reason: 'The site sent an empty answer (often a check for robots). Open it in Firefox and save it by hand.', at: Date.now() },
+    ],
+    lists: [{ name: 'booklist-main.txt', source: 'app', entries: 245 }],
+    freeBytes: 380e9,
   };
 }
 
@@ -349,6 +365,9 @@ http
         if (body.docId === 9003) return json(res, 200, { ok: false, how: 'xdg-open', error: { kind: 'error', code: 'not_pdf', message: 'This file is not a real PDF.', fix: 'Delete it and run 2-download-pdf-books.sh again.' } }, 150);
         return json(res, 200, { ok: true, how: 'evince' }, 200);
       }
+      if (p === '/api/books' || p === '/api/books/done') return json(res, 200, booksOverview(), 80);
+      if (p === '/api/books/download' || p === '/api/books/cancel') return json(res, 200, IDLE_DOWNLOAD, 80);
+      if (p === '/api/open-url') return json(res, 200, { ok: true, how: 'firefox' }, 80);
       return json(res, 404, { error: { kind: 'error', code: 'not_found', message: 'Unknown endpoint ' + p } });
     }
 

@@ -16,7 +16,8 @@ interface Props {
 export function Header({ route, onSearch, libraryAlert, settingsAlert, lastQuery }: Props) {
   const showSearch = route.name !== 'home';
   const q = route.name === 'search' ? route.q : route.name === 'read' ? lastQuery : '';
-  const active = route.name;
+  // Get books is part of Library.
+  const active = route.name === 'books' ? 'library' : route.name;
 
   return (
     <header className="topbar">

@@ -6,6 +6,7 @@ import { useCategories, useKiwixBooks, useRoute, useStatus } from './hooks';
 import { navigate, Route } from './router';
 import { S } from './strings';
 import { Browse } from './components/Browse';
+import { GetBooks } from './components/GetBooks';
 import { Header } from './components/Header';
 import { Home } from './components/Home';
 import { Library } from './components/Library';
@@ -35,6 +36,8 @@ function titleFor(route: Route): string {
       return S.nav.browse + ' — ' + S.appName;
     case 'library':
       return S.nav.library + ' — ' + S.appName;
+    case 'books':
+      return S.books.title + ' — ' + S.appName;
     case 'settings':
       return S.nav.settings + ' — ' + S.appName;
     case 'docs':
@@ -217,6 +220,9 @@ export function App() {
       break;
     case 'library':
       screen = <Library />;
+      break;
+    case 'books':
+      screen = <GetBooks tab={route.tab} />;
       break;
     case 'settings':
       screen = <Settings />;

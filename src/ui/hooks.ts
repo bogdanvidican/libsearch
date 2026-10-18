@@ -36,7 +36,13 @@ export function useStatus(): { status: Status | null; error: Notice | null; refr
         setStatus(s);
         setError(null);
         const u = s.update ? s.update.state : '';
-        const busy = s.index.build.running || s.kiwix.state === 'starting' || u === 'checking' || u === 'downloading';
+        const dl = s.downloads;
+        const busy =
+          s.index.build.running ||
+          s.kiwix.state === 'starting' ||
+          u === 'checking' ||
+          u === 'downloading' ||
+          (!!dl && (dl.books.running || dl.zims.running));
         timer = window.setTimeout(run, busy ? 1000 : 5000);
       } catch (e) {
         if (!alive) return;

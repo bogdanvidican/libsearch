@@ -105,6 +105,22 @@ export function updateTone(u: UpdateStatus): 'ok' | 'busy' | 'warn' | 'bad' | un
   }
 }
 
+/** "850 KB", "12.3 MB", "1.4 GB" (one decimal below 10 of a unit). */
+export function formatBytes(bytes: number): string {
+  const units: [number, string][] = [
+    [1073741824, 'GB'],
+    [1048576, 'MB'],
+    [1024, 'KB'],
+  ];
+  for (const [size, unit] of units) {
+    if (bytes >= size || unit === 'KB') {
+      const v = bytes / size;
+      return (v < 10 ? v.toFixed(1) : String(Math.round(v))) + ' ' + unit;
+    }
+  }
+  return '0 KB';
+}
+
 /** Megabytes for "12.3 of 78 MB": one decimal below 10 MB. */
 export function megabytes(bytes: number): string {
   const mb = bytes / 1048576;
