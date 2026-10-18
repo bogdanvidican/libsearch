@@ -407,6 +407,15 @@ export const S = {
     markDone: 'Mark as done',
     openFailed: 'Firefox could not be started.',
     lastRun: (when: string) => `Last download: ${when}`,
+    lists: {
+      fromApp: 'The book lists came with this version of the app.',
+      fromGithub: (when: string) => `The book lists were updated from GitHub on ${when}.`,
+      newBooks: (n: number) => `${formatNumber(n)} new ${plural(n, 'book is', 'books are')} on the lists since this version of the app.`,
+      check: 'Check for new lists',
+      checking: 'Checking…',
+      upToDate: 'The book lists are up to date.',
+      offline: 'No internet right now: the lists that came with the app are used.',
+    },
     zims: {
       title: 'Encyclopedias',
       intro:

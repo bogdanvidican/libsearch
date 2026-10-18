@@ -203,6 +203,7 @@ function status() {
     tools: { pdftotext: true, pdfinfo: true, evince: true, firefox: true },
     update: updateStatus(),
     downloads: { books: IDLE_DOWNLOAD, zims: IDLE_DOWNLOAD },
+    lists: { state: 'updated', source: 'github', newBooks: 4, fetchedAt: Date.now() - 3600000 },
     notices: [],
   };
 }
@@ -389,6 +390,7 @@ http
       }
       if (p === '/api/books' || p === '/api/books/done') return json(res, 200, booksOverview(), 80);
       if (p === '/api/books/download' || p === '/api/books/cancel') return json(res, 200, IDLE_DOWNLOAD, 80);
+      if (p === '/api/lists/check') return json(res, 200, { state: 'up-to-date', source: 'github', newBooks: 4, fetchedAt: Date.now() }, 400);
       if (p === '/api/zims') return json(res, 200, ZIMS, 80);
       if (p === '/api/zims/download' || p === '/api/zims/cancel') return json(res, 200, IDLE_DOWNLOAD, 80);
       if (p === '/api/manual' || p === '/api/manual/done') return json(res, 200, MANUAL, 80);

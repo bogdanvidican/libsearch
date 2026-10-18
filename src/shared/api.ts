@@ -199,6 +199,17 @@ export interface BooksOverview {
   freeBytes?: number;
 }
 
+/** New book lists from GitHub between app releases (src/server/lists.ts). */
+export interface ListsStatus {
+  state: 'idle' | 'checking' | 'up-to-date' | 'updated' | 'offline' | 'error' | 'unsupported';
+  /** github = at least one list in use came from GitHub (newer than the app's own). */
+  source: 'app' | 'github';
+  fetchedAt?: number;
+  /** Books on the lists in use that the app's own lists don't have. */
+  newBooks: number;
+  error?: Notice;
+}
+
 /** One encyclopedia on Library -> Get books -> Encyclopedias (kit/booklists/encyclopedias.txt). */
 export interface ZimItem {
   /** The file name prefix, e.g. "wikipedia_en_medicine_maxi_". */
@@ -290,6 +301,8 @@ export interface Status {
   update: UpdateStatus;
   /** Library -> Get books: the books job and the encyclopedias job (idle when not running). */
   downloads: { books: DownloadProgress; zims: DownloadProgress };
+  /** Book lists from GitHub. */
+  lists: ListsStatus;
   notices: Notice[];
 }
 

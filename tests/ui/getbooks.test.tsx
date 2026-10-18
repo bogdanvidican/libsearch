@@ -138,6 +138,19 @@ describe('Get books page', () => {
     done();
   });
 
+  it('says when the lists have new books from GitHub, and checks again on request', async () => {
+    const check = vi.spyOn(api, 'listsCheck').mockResolvedValue({ state: 'up-to-date', source: 'github', newBooks: 3, fetchedAt: 1 });
+    const ctx = ctxWith(progress());
+    (ctx.status as unknown as { lists: unknown }).lists = { state: 'updated', source: 'github', newBooks: 3, fetchedAt: Date.UTC(2026, 9, 18, 12) };
+    const { el, done } = await show(ctx, overview());
+    expect(el.textContent).toContain(S.books.lists.newBooks(3));
+    await act(async () => {
+      button(el, S.books.lists.check)!.click();
+    });
+    expect(check).toHaveBeenCalled();
+    done();
+  });
+
   it("shows the problem instead of the button when the library folder can't be used", async () => {
     const problem = { kind: 'error' as const, code: 'library-inside-app', message: 'The folder is inside the app.', fix: 'Choose another one.' };
     const { el, done } = await show(ctxWith(progress()), overview({ destination: null, problem }));

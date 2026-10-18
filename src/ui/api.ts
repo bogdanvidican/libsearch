@@ -12,6 +12,7 @@ import type {
   KiwixBook,
   KiwixSearchResponse,
   KiwixStatus,
+  ListsStatus,
   ManualItem,
   NativeBridge,
   Notice,
@@ -137,6 +138,8 @@ export const api = {
   booksCancel: () => request<DownloadProgress>('POST', '/api/books/cancel', {}),
   /** "Mark as done": the book was saved by hand (or undo it). */
   booksDone: (id: string, done: boolean) => request<BooksOverview>('POST', '/api/books/done', { id, done }),
+  /** Look for new book lists on GitHub now. */
+  listsCheck: () => request<ListsStatus>('POST', '/api/lists/check', {}),
   /** Library -> Get books -> Encyclopedias. */
   zims: () => request<EncyclopediasOverview>('GET', '/api/zims'),
   zimsDownload: (ids: string[]) => request<DownloadProgress>('POST', '/api/zims/download', { ids }),

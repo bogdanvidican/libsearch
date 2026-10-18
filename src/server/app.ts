@@ -9,6 +9,7 @@ import { checkLibraryFolder, Config, effectiveRoots, expandHome, insideAppMessag
 import { DB, breakStaleLock, isBusyError, openDb, readIndexerPid, removeStaleLock, withRetry } from './db';
 import { Kiwix } from './kiwix';
 import { DownloadJob } from './jobs';
+import { ListUpdater, ListUpdaterOptions } from './lists';
 import { openDocument, openUrl, readEpubEntry } from './opener';
 import { FileStamp, IndexStats, indexStats, indexedFileStamps, listCategories, listDocs, listProblems, resolveDocFile, searchBooks } from './search';
 import { loadSettings, saveSettings } from './settings';
@@ -67,6 +68,8 @@ export interface AppOptions {
   downloaderPath?: string;
   downloads?: DownloadOptions;
   openUrl?: (url: string) => Promise<OpenResult>;
+  /** Book lists from GitHub (a fake GitHub in tests). */
+  lists?: ListUpdaterOptions;
   /** After an encyclopedia download: make kiwix-serve pick up the new file (a spy in tests). */
   restartKiwix?: () => Promise<unknown>;
 }
@@ -77,6 +80,8 @@ export class App {
   /** Library -> Get books: the books download job, and the encyclopedias one (they can run side by side). */
   readonly books: DownloadJob;
   readonly zims: DownloadJob;
+  /** New book lists from GitHub between releases. */
+  readonly lists: ListUpdater;
   private readonly dlOpts: DownloadOptions;
   private readonly openUrl: (url: string) => Promise<OpenResult>;
   private readonly restartKiwix: () => Promise<unknown>;
@@ -105,6 +110,7 @@ export class App {
       onExit: (p) => this.zimsEnded(p),
     });
     this.dlOpts = opts.downloads || {};
+    this.lists = new ListUpdater(cfg, opts.lists);
     this.openUrl = opts.openUrl || openUrl;
     this.restartKiwix =
       opts.restartKiwix || (() => (this.cfg.kiwixAutostart || this.kiwix.isStartedByUs() ? this.kiwix.restart() : Promise.resolve()));
@@ -302,8 +308,10 @@ export class App {
 
   /** The book lists: the app's own, then the library's booklist-local.txt (books the user added). */
   bookLists(): ListRef[] {
-    const dir = path.join(this.cfg.appDir, 'kit', 'booklists');
-    const lists: ListRef[] = ['booklist-main.txt', 'booklist-linux.txt'].map((n) => ({ name: n, path: path.join(dir, n), source: 'app' as const }));
+    const lists: ListRef[] = (['booklist-main.txt', 'booklist-linux.txt'] as const).map((n) => {
+      const e = this.lists.effective(n);
+      return { name: n, path: e.path, source: e.source };
+    });
     const root = this.cfg.roots[0];
     if (root) lists.push({ name: 'booklist-local.txt', path: path.join(root, 'booklist-local.txt'), source: 'library' });
     return lists;
@@ -317,7 +325,7 @@ export class App {
   manualItems(): ManualItem[] {
     const root = this.cfg.roots[0];
     const state = root && fs.existsSync(root) ? loadState(root) : emptyState();
-    return manualItems(path.join(this.cfg.appDir, 'kit', 'booklists', 'manual-downloads.txt'), this.cfg.roots, state);
+    return manualItems(this.lists.effective('manual-downloads.txt').path, this.cfg.roots, state);
   }
 
   private downloadArgs(): string[] {
@@ -359,7 +367,7 @@ export class App {
   // ---------- encyclopedias (Library -> Get books -> Encyclopedias) ----------
 
   private zimListPath(): string {
-    return path.join(this.cfg.appDir, 'kit', 'booklists', 'encyclopedias.txt');
+    return this.lists.effective('encyclopedias.txt').path;
   }
 
   zimsOverview(): EncyclopediasOverview {
@@ -522,6 +530,7 @@ export class App {
       tools,
       update: this.updater.status(),
       downloads: { books: this.books.progress(), zims: this.zims.progress() },
+      lists: this.lists.status(),
       notices,
     };
   }
@@ -764,6 +773,9 @@ export class App {
         return this.send(res, 200, this.booksOverview());
       }
 
+      case 'POST /api/lists/check':
+        return this.send(res, 200, await this.lists.check());
+
       case 'GET /api/zims':
         return this.send(res, 200, this.zimsOverview());
 
@@ -853,6 +865,7 @@ export class App {
     this.updater.stop();
     this.books.stop();
     this.zims.stop();
+    this.lists.stop();
     if (this.resumeTimer) clearTimeout(this.resumeTimer);
     if (this.indexer) {
       try {

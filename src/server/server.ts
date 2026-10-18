@@ -61,6 +61,8 @@ function listen(port: number, triesLeft: number): void {
     app.updater.start();
     // An encyclopedia download that was running when the app closed continues by itself.
     app.resumeDownloads();
+    // New book lists from GitHub, on the update schedule (Settings -> Updates).
+    app.lists.start();
   });
 
   let stopping = false;

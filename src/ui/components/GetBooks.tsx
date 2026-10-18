@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, CircleCheck, Download, ExternalLink, Globe, ListChecks, ListOrdered, RefreshCw, Square, TriangleAlert } from 'lucide-react';
-import type { BooksOverview, DownloadFailure, DownloadProgress, EncyclopediasOverview, ManualItem } from '../../shared/api';
+import type { BooksOverview, DownloadFailure, DownloadProgress, EncyclopediasOverview, ListsStatus, ManualItem } from '../../shared/api';
 import { api, ApiError } from '../api';
 import { ToastInput, useApp } from '../context';
 import { formatBytes, formatDate, percent } from '../format';
@@ -228,6 +228,7 @@ function BookLists() {
   return (
     <>
       <DownloadCard o={data} job={job} onStart={start} onStop={stop} />
+      <ListsLine onChecked={() => setReload((n) => n + 1)} />
       <TopicsCard o={data} />
       {data.failures.length ? <FailuresCard failures={data.failures} onOpen={open} onDone={markDone} /> : null}
     </>
@@ -288,6 +289,46 @@ function DownloadCard({ o, job, onStart, onStop }: { o: BooksOverview; job: Down
           {o.lastRun ? <p className="card__text">{S.books.lastRun(formatDate(o.lastRun.finishedAt))}</p> : null}
         </>
       )}
+    </section>
+  );
+}
+
+/** Where the book lists come from (the app, or newer ones from GitHub), and a button to look again now. */
+function ListsLine({ onChecked }: { onChecked: () => void }) {
+  const app = useApp();
+  const [checking, setChecking] = useState(false);
+  const [result, setResult] = useState<ListsStatus | null>(null);
+  const st = result || (app.status ? app.status.lists : null);
+  if (!st || st.state === 'unsupported') return null;
+  const l = S.books.lists;
+  const check = () => {
+    setChecking(true);
+    api.listsCheck().then(
+      (s) => {
+        setChecking(false);
+        setResult(s);
+        app.refreshStatus();
+        onChecked();
+      },
+      (e) => {
+        setChecking(false);
+        app.toast(errorToast(e));
+      }
+    );
+  };
+  return (
+    <section className="card">
+      {st.newBooks > 0 ? <NoticeBox kind="info" compact title={l.newBooks(st.newBooks)} /> : null}
+      {st.error ? <NoticeBox kind={st.error.kind} compact title={st.error.message} fix={st.error.fix} /> : null}
+      <p className="card__text">
+        {st.state === 'offline' ? l.offline : st.source === 'github' && st.fetchedAt ? l.fromGithub(formatDate(st.fetchedAt)) : st.state === 'up-to-date' ? l.upToDate : l.fromApp}
+      </p>
+      <div className="btn-row">
+        <button type="button" className="btn btn--ghost" disabled={checking || st.state === 'checking'} onClick={check}>
+          <RefreshCw size={18} aria-hidden="true" />
+          {checking || st.state === 'checking' ? l.checking : l.check}
+        </button>
+      </div>
     </section>
   );
 }
