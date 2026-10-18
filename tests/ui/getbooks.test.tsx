@@ -3,11 +3,11 @@
 import { act } from 'react-dom/test-utils';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { BooksOverview, DownloadProgress, Status } from '../../src/shared/api';
+import type { BooksOverview, DownloadProgress, ManualItem, Status } from '../../src/shared/api';
 import { api } from '../../src/ui/api';
 import { AppContext, AppCtx } from '../../src/ui/context';
 import { GetBooks } from '../../src/ui/components/GetBooks';
-import { parseHash, routeToHash } from '../../src/ui/router';
+import { BooksTab, parseHash, routeToHash } from '../../src/ui/router';
 import { S } from '../../src/ui/strings';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -45,7 +45,7 @@ function ctxWith(books: DownloadProgress, extra: Partial<AppCtx> = {}): AppCtx {
   } as unknown as AppCtx;
 }
 
-async function show(ctx: AppCtx, data: BooksOverview): Promise<{ el: HTMLElement; done: () => void }> {
+async function show(ctx: AppCtx, data: BooksOverview, tab: BooksTab = 'lists'): Promise<{ el: HTMLElement; done: () => void }> {
   vi.spyOn(api, 'books').mockResolvedValue(data);
   const el = document.createElement('div');
   document.body.appendChild(el);
@@ -53,7 +53,7 @@ async function show(ctx: AppCtx, data: BooksOverview): Promise<{ el: HTMLElement
   await act(async () => {
     root.render(
       <AppContext.Provider value={ctx}>
-        <GetBooks tab="lists" />
+        <GetBooks tab={tab} />
       </AppContext.Provider>
     );
   });
@@ -140,6 +140,44 @@ describe('Get books page', () => {
     const { el, done } = await show(ctxWith(progress()), overview({ destination: null, problem }));
     expect(el.textContent).toContain('The folder is inside the app.');
     expect(button(el, S.books.download(3))).toBeUndefined();
+    done();
+  });
+});
+
+describe('Save by hand', () => {
+  const items: ManualItem[] = [
+    { id: 'M|01 Medicine|https://ex.org/vet', folder: '01 Medicine', title: 'Where There Is No Vet (Oxfam)', url: 'https://ex.org/vet', how: 'button', note: '6 PDF parts: save each one.', done: false, auto: true },
+    { id: 'M|04 Food Preservation|https://ex.org/grain', folder: '04 Food Preservation', title: 'FAO Grain Storage', url: 'https://ex.org/grain', how: 'print-to-pdf', note: '', done: true, auto: false },
+  ];
+
+  it('lists the items to save by hand with Open in Firefox and a checkbox', async () => {
+    vi.spyOn(api, 'manual').mockResolvedValue(items);
+    const open = vi.spyOn(api, 'openUrl').mockResolvedValue({ ok: true, how: 'firefox' });
+    const { el, done } = await show(ctxWith(progress()), overview(), 'manual');
+    expect(el.querySelector('[aria-current="page"]')!.textContent).toBe(S.books.tabs.manual);
+    expect(el.textContent).toContain('Where There Is No Vet (Oxfam)');
+    expect(el.textContent).toContain(S.books.saveInto('04 Food Preservation'));
+    expect(el.textContent).toContain(S.books.manual.how['print-to-pdf']);
+    expect(el.textContent).toContain('6 PDF parts: save each one.');
+    expect(el.textContent).toContain(S.books.manual.found);
+    expect(el.textContent).toContain(S.books.manual.count(1, 2));
+    const boxes = Array.from(el.querySelectorAll('input[type="checkbox"]')) as HTMLInputElement[];
+    expect(boxes.map((b) => b.checked)).toEqual([false, true]);
+    await act(async () => {
+      button(el, S.books.openInFirefox)!.click();
+    });
+    expect(open).toHaveBeenCalledWith('https://ex.org/vet');
+    done();
+  });
+
+  it('ticking an item saves it', async () => {
+    vi.spyOn(api, 'manual').mockResolvedValue(items);
+    const tick = vi.spyOn(api, 'manualDone').mockResolvedValue(items.map((i) => ({ ...i, done: true })));
+    const { el, done } = await show(ctxWith(progress()), overview(), 'manual');
+    await act(async () => {
+      (el.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+    });
+    expect(tick).toHaveBeenCalledWith('M|01 Medicine|https://ex.org/vet', true);
     done();
   });
 });

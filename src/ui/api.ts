@@ -11,6 +11,7 @@ import type {
   KiwixBook,
   KiwixSearchResponse,
   KiwixStatus,
+  ManualItem,
   NativeBridge,
   Notice,
   OpenRequest,
@@ -135,6 +136,9 @@ export const api = {
   booksCancel: () => request<DownloadProgress>('POST', '/api/books/cancel', {}),
   /** "Mark as done": the book was saved by hand (or undo it). */
   booksDone: (id: string, done: boolean) => request<BooksOverview>('POST', '/api/books/done', { id, done }),
+  /** Library -> Get books -> Save by hand. */
+  manual: () => request<ManualItem[]>('GET', '/api/manual'),
+  manualDone: (id: string, done: boolean) => request<ManualItem[]>('POST', '/api/manual/done', { id, done }),
   /** A web page in Firefox (the app window itself never goes online). */
   openUrl: (url: string) => request<OpenResult>('POST', '/api/open-url', { url }),
 };

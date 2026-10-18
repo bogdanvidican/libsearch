@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Check, CircleCheck, Download, ExternalLink, ListOrdered, RefreshCw, Square, TriangleAlert } from 'lucide-react';
-import type { BooksOverview, DownloadFailure, DownloadProgress } from '../../shared/api';
+import { Check, CircleCheck, Download, ExternalLink, ListChecks, ListOrdered, RefreshCw, Square, TriangleAlert } from 'lucide-react';
+import type { BooksOverview, DownloadFailure, DownloadProgress, ManualItem } from '../../shared/api';
 import { api, ApiError } from '../api';
 import { ToastInput, useApp } from '../context';
 import { formatBytes, formatDate, percent } from '../format';
@@ -11,7 +11,7 @@ import { CardHead } from './CardHead';
 import { NoticeBox } from './NoticeBox';
 
 /** The tabs that exist so far, in order. */
-const TABS: BooksTab[] = ['lists'];
+const TABS: BooksTab[] = ['lists', 'manual'];
 
 export function errorToast(e: unknown): ToastInput {
   if (e instanceof ApiError) return { kind: 'error', message: e.notice.message, fix: e.notice.fix };
@@ -37,7 +37,75 @@ export function GetBooks({ tab }: { tab: BooksTab }) {
         </nav>
       ) : null}
       {current === 'lists' ? <BookLists /> : null}
+      {current === 'manual' ? <ManualList /> : null}
     </div>
+  );
+}
+
+/** Get books -> Save by hand: sites no program can fetch from, with Open in Firefox and a tick box each. */
+function ManualList() {
+  const app = useApp();
+  const [items, setItems] = useState<ManualItem[] | null>(null);
+  const { data, error } = useLoad<ManualItem[]>('manual:' + (app.status ? app.status.roots.join('|') : ''), () => api.manual());
+  const list = items || data;
+  if (!list) return error ? <NoticeBox kind="error" title={error.message} fix={error.fix} /> : null;
+  const fail = (e: unknown) => app.toast(errorToast(e));
+  const tick = (id: string, done: boolean) => {
+    api.manualDone(id, done).then(setItems, fail);
+  };
+  const open = (url: string) => {
+    api.openUrl(url).then((r) => {
+      if (!r.ok) app.toast({ kind: 'error', message: r.error ? r.error.message : S.books.openFailed, fix: r.error ? r.error.fix : undefined });
+    }, fail);
+  };
+  const topics: string[] = [];
+  for (const i of list) {
+    const t = i.folder.split('/')[0];
+    if (topics.indexOf(t) < 0) topics.push(t);
+  }
+  topics.sort();
+  const m = S.books.manual;
+  return (
+    <section className="card">
+      <CardHead icon={<ListChecks size={22} />} title={m.title} />
+      <p className="card__text">{m.intro}</p>
+      <p className="card__fix">{m.tipPdf}</p>
+      <p className="card__fix">{m.tipPrint}</p>
+      <p className="card__ok">
+        <CircleCheck size={18} aria-hidden="true" />
+        {m.count(list.filter((i) => i.done).length, list.length)}
+      </p>
+      {topics.map((t) => (
+        <div key={t} className="manual__topic">
+          <h3 className="manual__topic-title">{t.replace(/^\d{1,3}\s+/, '')}</h3>
+          <ul className="failures" role="list">
+            {list
+              .filter((i) => i.folder.split('/')[0] === t)
+              .map((i) => (
+                <li key={i.id} className={'failure manual' + (i.done ? ' manual--done' : '')}>
+                  <label className="manual__check">
+                    <input type="checkbox" checked={i.done} onChange={(e) => tick(i.id, e.target.checked)} />
+                    <span className="failure__file">{i.title}</span>
+                    <span className="visually-hidden">{m.saved}</span>
+                  </label>
+                  <span className="failure__folder">{S.books.saveInto(i.folder)}</span>
+                  <span className="failure__reason">
+                    {m.how[i.how]}
+                    {i.note ? ' · ' + i.note : ''}
+                  </span>
+                  {i.auto ? <span className="tag tag--ok">{m.found}</span> : null}
+                  <span className="btn-row">
+                    <button type="button" className="btn btn--secondary" onClick={() => open(i.url)}>
+                      <ExternalLink size={18} aria-hidden="true" />
+                      {S.books.openInFirefox}
+                    </button>
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </div>
+      ))}
+    </section>
   );
 }
 

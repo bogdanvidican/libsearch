@@ -399,6 +399,23 @@ export const S = {
     markDone: 'Mark as done',
     openFailed: 'Firefox could not be started.',
     lastRun: (when: string) => `Last download: ${when}`,
+    manual: {
+      title: 'Books to save by hand',
+      intro:
+        'These sites need a click, a form or “Print to PDF”, so the app can’t fetch them. Open each one in Firefox, save it into the folder shown, then tick it.',
+      tipPdf:
+        'Firefox shows a PDF in its own viewer: click the Download arrow at the top right to save it. Firefox saves into Downloads - move the file into the folder shown.',
+      tipPrint: 'For a web page: Firefox menu → Print → “Save to PDF” (older Firefox: “Print to File”, format PDF).',
+      count: (done: number, total: number) => `${formatNumber(done)} of ${formatNumber(total)} saved`,
+      how: {
+        button: 'Has a download button on the page',
+        'print-to-pdf': 'A web page: save it with Print → Save to PDF',
+        form: 'The site asks for your details first',
+        zip: 'A zip file: unpack it into the folder',
+      } as Record<string, string>,
+      saved: 'Saved',
+      found: 'A file with this title is already in the folder - tick it if it is the right one.',
+    },
     card: {
       missing: (n: number) => `${formatNumber(n)} ${plural(n, 'book', 'books')} on the lists ${n === 1 ? 'is' : 'are'} not on this computer yet.`,
       none: 'Every book on the lists is on this computer.',
