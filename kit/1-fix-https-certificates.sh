@@ -11,4 +11,4 @@ if grep -q '^mozilla/DST_Root_CA_X3.crt' /etc/ca-certificates.conf; then
 fi
 update-ca-certificates --fresh
 set +x
-echo; echo "Done. Next step:  bash 2-download-pdf-books.sh"
+echo; echo "Done. Next step, inside your library folder:  bash \"$(dirname "$(readlink -f "$0")")/2-download-pdf-books.sh\""

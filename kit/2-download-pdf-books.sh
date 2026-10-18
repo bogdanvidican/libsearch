@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # Community Rebuild Library downloader - Ubuntu 16.04+ version.
-# Run from a terminal:   bash 2-download-pdf-books.sh
+# Run it inside your library folder, or name the folder:   bash 2-download-pdf-books.sh "/path/to/your library"
+# Book lists: booklists/booklist-main.txt + booklist-linux.txt (they come with the app, next to this script) and
+# booklist-local.txt in the library folder (your own books; created the first time, never changed by updates).
 # Safe to re-run: finished files are skipped, partial ones resume.
-cd "$(dirname "$(readlink -f "$0")")" || exit 1
+KIT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+. "$KIT_DIR/library-folder.sh" && pick_library "$@" || exit 1
+shift "$LIBRARY_SHIFT"; cd "$LIBRARY" || exit 1
 UA="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:115.0) Gecko/20100101 Firefox/115.0"
 LOG="2-download-log.txt"; FAILED="2-failed-downloads.txt"
 
@@ -10,8 +14,8 @@ LOG="2-download-log.txt"; FAILED="2-failed-downloads.txt"
 if ! command -v curl >/dev/null 2>&1; then
   echo "curl is missing. Install it with:  sudo apt-get install curl"; exit 1
 fi
-[ -f booklist-main.txt ] || { echo "booklist-main.txt not found next to this script."; exit 1; }
-curl -sS -o /dev/null --connect-timeout 20 -A "$UA" https://www.gutenberg.org/ 2>/tmp/crl_test.$$; rc=$?
+[ -f "$KIT_DIR/booklists/booklist-main.txt" ] || { echo "booklist-main.txt not found in $KIT_DIR/booklists - install the app again."; exit 1; }
+curl -sS -o /dev/null --connect-timeout 20 -A "$UA" "${LIBRARY_KIT_CHECK_URL:-https://www.gutenberg.org/}" 2>/tmp/crl_test.$$; rc=$?
 if [ $rc -eq 60 ] || [ $rc -eq 35 ] || [ $rc -eq 77 ]; then
   echo "!! This computer's security certificates are too old to open modern HTTPS sites (curl error $rc)."
   echo "   Run once:   sudo bash 1-fix-https-certificates.sh   then start this script again."
@@ -23,6 +27,13 @@ rm -f /tmp/crl_test.$$
 free_mb=$(df -Pm . | awk 'NR==2{print $4}')
 echo "Free space here: ${free_mb} MB (the PDF library needs about 2000 MB)."
 [ "$free_mb" -lt 2500 ] && echo "!! Low on space - downloads may stop part way."
+
+[ -f booklist-local.txt ] || cp "$KIT_DIR/booklists/booklist-local-template.txt" booklist-local.txt 2>/dev/null
+LISTS=("$KIT_DIR/booklists/booklist-main.txt")
+[ -f "$KIT_DIR/booklists/booklist-linux.txt" ] && LISTS+=("$KIT_DIR/booklists/booklist-linux.txt")
+[ -f booklist-local.txt ] && LISTS+=("$LIBRARY/booklist-local.txt")
+echo "Library folder: $LIBRARY"
+echo "Book lists:"; printf '  %s\n' "${LISTS[@]}"
 
 : > "$FAILED"; echo "=== Run $(date) ===" >> "$LOG"
 ok=0; bad=0; skip=0
@@ -96,7 +107,7 @@ while IFS='|' read -r t a b c; do
     S) scrape "$a" "$b" "$c";;
     A) archive_item "$a" "$b";;
   esac
-done < <(cat booklist-main.txt $( [ -f booklist-linux.txt ] && echo booklist-linux.txt ) | grep -v '^#' | tr -d '\r')
+done < <(for l in "${LISTS[@]}"; do cat "$l"; echo; done | tr -d '\r' | grep -v '^#')  # echo: a list without a final newline
 
 # ---- failures -> a clickable page for Firefox (a real browser gets past most bot checks) ----
 HTML="2-failed-downloads-open-in-firefox.html"
@@ -117,5 +128,5 @@ if [ "$bad" -gt 0 ]; then
   echo "Some sites block scripts. Opening $HTML in Firefox - click each link to save it by hand."
   command -v firefox >/dev/null && (firefox "$(readlink -f "$HTML")" >/dev/null 2>&1 &)
 fi
-echo "Other items that need a manual click are listed in 0-README-start-here.md"
+echo "Other items that need a manual click are listed in $KIT_DIR/0-README-start-here.md"
 read -n 1 -s -r -p "Press any key to close."; echo

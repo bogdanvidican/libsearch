@@ -1,0 +1,8 @@
+# Your own books. 2-download-pdf-books.sh (and later the app's Get books) reads this list after the app's lists.
+# It lives in your library folder; updates of the app never change it.
+# Same format as the app's booklist-main.txt, one book per line (remove the # in front of the example to use it):
+#   F|folder|file-name.pdf|https://...            one file, saved as <folder>/<file-name.pdf>
+#   S|folder|https://page...|href="[^"]*\.pdf"     every PDF linked from a page
+#   A|folder|archive.org-identifier                every PDF of an archive.org item
+# Folders are the numbered topic folders, e.g. "01 Medicine" or "06 Carpentry & Construction/Carpentry & Wood".
+# F|01 Medicine|My_First_Aid_Book.pdf|https://example.org/first-aid.pdf

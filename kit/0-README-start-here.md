@@ -1,23 +1,32 @@
 # Community Rebuild Library - Ubuntu 16.04 + Firefox
 
-Copy this whole "Ubuntu CF-30 Kit" folder to the Ubuntu computer (or to the drive the library will live on).
-The scripts build the library inside this folder. Book lists: `booklist-main.txt` (main) + `booklist-linux.txt` (Linux manuals).
-Tip: copy any PDF folders already downloaded on another computer (01 Medicine, ...) in here first - the script keeps them.
+The download scripts, the book lists and this guide come with the **Library Search** app (step 6). They are in
+the app's `kit` folder: `<app folder>/dist/library-search-linux-ia32/resources/app/kit/` (in a git checkout of the
+app: `kit/`). Every app update brings the newest versions. Below, `<kit>` stands for that folder.
+
+The books and encyclopedias go in your **library folder**: one folder holding the topic folders (`01 Medicine`, ...,
+`15 Offline Encyclopedias (Kiwix)`). Keep it outside the app's folder, so deleting or reinstalling the app never
+touches it. Run the scripts inside the library folder, or name the folder after the script:
+`bash "<kit>/2-download-pdf-books.sh" "/path/to/your library"`.
+
+Book lists: `booklist-main.txt` (main) + `booklist-linux.txt` (Linux manuals), both in `<kit>/booklists/`, plus
+`booklist-local.txt` in your library folder for books of your own (app updates never change it).
+Tip: copy any PDF folders already downloaded on another computer (01 Medicine, ...) into the library folder first - the script keeps them.
 
 ## Run order
-Open a terminal in this folder and run the scripts in number order (or double-click the matching .desktop
-launcher - first time: right-click -> Properties -> Permissions -> "Allow executing file as program").
+Install the app first (step 6): the other scripts come with it. Then open a terminal in your library folder
+(in the file manager: right-click inside the folder -> "Open in Terminal") and run the scripts in number order.
 
 | Step | Script | What it does | Size | Needed? |
 | --- | --- | --- | --- | --- |
-| 0 | `0-README-start-here.md` | This guide | - | read first |
-| 1 | `sudo bash 1-fix-https-certificates.sh` | Updates Ubuntu 16.04's expired security certificates so downloads work | small | once, recommended |
-| 2 | `bash 2-download-pdf-books.sh` | Downloads the PDF books (reads `booklist-main.txt` + `booklist-linux.txt`); anything blocked opens in Firefox as `2-failed-downloads-open-in-firefox.html` | ~2 GB | yes |
-| 3 | `bash 3-download-offline-wikipedia.sh` | Offline Wikipedia, WikiMed, repair guides, Q&A sites + the Kiwix reader | ~80 GB | optional |
-| 4 | `bash 4-download-khan-academy.sh` | All of Khan Academy (resumes if interrupted) | 168 GB | optional (also fetches the Kiwix reader if step 3 was skipped) |
-| 5 | `bash 5-start-offline-library-in-firefox.sh` | Opens everything from steps 3-4 in Firefox at http://localhost:8080 | - | every time you want to use it |
-| 6 | `bash 6-install-or-update-search-app.sh` | Installs or updates the **Library Search** app (downloads it, or takes a `.tar.gz` from a USB stick) | ~80 MB | once, then to update |
-| 6 | `bash 6-search-the-library.sh` | **One search box for everything**: all the books plus Wikipedia, Khan Academy and the Q&A sites | - | every time you want to look something up |
+| 0 | `<kit>/0-README-start-here.md` | This guide | - | read first |
+| 6 | `bash 6-install-or-update-search-app.sh` | Installs or updates the **Library Search** app - and with it these scripts and book lists (downloads it, or takes a `.tar.gz` from a USB stick) | ~80 MB | first, then to update |
+| 1 | `sudo bash "<kit>/1-fix-https-certificates.sh"` | Updates Ubuntu 16.04's expired security certificates so downloads work | small | once, recommended |
+| 2 | `bash "<kit>/2-download-pdf-books.sh"` | Downloads the PDF books (reads the app's book lists + your `booklist-local.txt`); anything blocked opens in Firefox as `2-failed-downloads-open-in-firefox.html` | ~2 GB | yes |
+| 3 | `bash "<kit>/3-download-offline-wikipedia.sh"` | Offline Wikipedia, WikiMed, repair guides, Q&A sites + the Kiwix reader | ~80 GB | optional |
+| 4 | `bash "<kit>/4-download-khan-academy.sh"` | All of Khan Academy (resumes if interrupted) | 168 GB | optional (also fetches the Kiwix reader if step 3 was skipped) |
+| 5 | `bash "<kit>/5-start-offline-library-in-firefox.sh"` | Opens everything from steps 3-4 in Firefox at http://localhost:8080 | - | only without the app (the app opens them itself) |
+| 6 | **Library Search** in the sidebar or the Dash | **One search box for everything**: all the books plus Wikipedia, Khan Academy and the Q&A sites | - | every time you want to look something up |
 
 Steps 2-4 are safe to re-run: they skip finished files and resume partial ones.
 
@@ -26,12 +35,12 @@ Steps 2-4 are safe to re-run: they skip finished files and resume partial ones.
   and the Kiwix reader comes as a 32-bit (i586) build - the scripts pick it automatically
   (newest i586 release, or 3.7.0 if a newer one has no 32-bit build).
 - Before the big downloads, test the reader with a small file: run the offline-Wikipedia script with only the
-  PhET line enabled (~0.1 GB), then  bash 5-start-offline-library-in-firefox.sh  and check it opens in Firefox.
+  PhET line enabled (~0.1 GB), then open it in the app (or  bash "<kit>/5-start-offline-library-in-firefox.sh"  in Firefox).
   Then try a mid-size one (WikiMed, 2 GB) before committing to Khan Academy (168 GB).
 - Disk: this CF-30 has ~443 GB free, so everything fits on the internal disk - PDFs (~2 GB) + offline
   Wikipedia set (~80 GB) + Khan Academy (168 GB) = ~250 GB. To add ALL of English Wikipedia (119 GB), enable it in
   step 3 and comment out the "top 1M articles" line (it's a subset), for ~320 GB total.
-  Copy this folder to your home folder (ext4) - not to a FAT32 USB stick.
+  Keep the library folder in your home folder (ext4) - not on a FAT32 USB stick.
 - Hard drive (HDD), not SSD: everything still works. Videos stream fine; Wikipedia searches and first page loads
   are a bit slower because the disk has to seek. Two tweaks:
   * Make Linux use RAM before the slow disk swap:  sudo sysctl vm.swappiness=10
@@ -47,30 +56,32 @@ Steps 2-4 are safe to re-run: they skip finished files and resume partial ones.
   the online preview step in the Khan Academy section.
 
 ## 1. Download the PDF library (~2 GB)
-Open a terminal in this folder (in the file manager: right-click inside the folder -> "Open in Terminal",
+Open a terminal in your library folder (in the file manager: right-click inside the folder -> "Open in Terminal",
 or `cd` to it), then run:
 
-    bash 2-download-pdf-books.sh
+    bash "<kit>/2-download-pdf-books.sh"
 
 - Re-run it any time: finished files are skipped and partial ones resume.
 - Some sites block scripts (they return a "bot check" instead of the PDF). Those are caught and listed in
-  `2-failed-downloads-open-in-firefox.html`, which opens in Firefox at the end: click each link and save the file into the folder shown.
-- If it says the certificates are too old (common on 16.04), run once:  `sudo bash 1-fix-https-certificates.sh`
+  `2-failed-downloads-open-in-firefox.html` (in the library folder), which opens in Firefox at the end: click each link and save the file into the folder shown.
+- Books of your own: add lines to `booklist-local.txt` in the library folder (same format as the app's lists; the
+  file explains it and is created the first time the script runs). App updates bring new versions of the scripts
+  and of the app's lists, but never change `booklist-local.txt`.
+- If it says the certificates are too old (common on 16.04), run once:  `sudo bash "<kit>/1-fix-https-certificates.sh"`
 - If curl is missing:  `sudo apt-get install curl`
-- Double-click option: `2-download-pdf-books.desktop`. The first time, right-click it -> Properties ->
-  Permissions -> tick "Allow executing file as program" (or Ubuntu asks "Trust and Launch").
-- Copied from a USB stick and "Permission denied"? Always start scripts with `bash <name>.sh` - that avoids it.
+- Always start scripts with `bash <name>.sh` - that avoids "Permission denied".
 
 ## 2. Optional: offline Wikipedia, medical wiki, repair guides (~80 GB)
 
-    bash 3-download-offline-wikipedia.sh
-    bash 5-start-offline-library-in-firefox.sh     # opens everything in Firefox at http://localhost:8080
+    bash "<kit>/3-download-offline-wikipedia.sh"
+    bash "<kit>/5-start-offline-library-in-firefox.sh"     # without the app: opens everything in Firefox at http://localhost:8080
 
 - Uses `kiwix-serve` (downloaded automatically, a static build that runs on old Ubuntu). Firefox is the reader.
 - Other phones/laptops on the same Wi-Fi or network cable can open it too - the start script prints the address.
 - Use an ext4 or exFAT drive. FAT32 USB sticks can't hold files over 4 GB (the script warns and skips those).
   exFAT on 16.04 needs:  `sudo apt-get install exfat-fuse exfat-utils`
-- Edit the script to turn items on/off (full English Wikipedia, 119 GB, is off). Khan Academy has its own script - see below.
+- Edit the script to turn items on/off (full English Wikipedia, 119 GB, is off; an app update undoes such edits).
+  Khan Academy has its own script - see below.
 
 ## 3. Manual downloads in Firefox
 Tip first: Firefox opens PDFs in its own viewer. To save one, click the **Download** arrow in the viewer's
@@ -131,12 +142,12 @@ older Firefox: menu -> Print -> "Print to File" -> Output format PDF -> Print.
 ## Khan Academy in Firefox (via Kiwix)
 1. Preview first (online, 5 min): in Firefox open https://library.kiwix.org , search "Khan Academy", open it,
    play a video and try an exercise. If that works in this Firefox, the offline copy will too.
-2. Make sure this folder is on a disk with 200+ GB free, formatted ext4, exFAT or NTFS (not FAT32) -
+2. Make sure the library folder is on a disk with 200+ GB free, formatted ext4, exFAT or NTFS (not FAT32) -
    the CF-30's internal disk is fine.
-3. Download (168 GB; ~8 h at 50 Mbit/s, ~1.5 days at 10 Mbit/s). Safe to stop and re-run - it resumes:
-       bash 4-download-khan-academy.sh          (Spanish: add  es , French: add  fr )
-4. Start it:  bash 5-start-offline-library-in-firefox.sh   or double-click  5-start-offline-library-in-firefox.desktop
-   Firefox opens http://localhost:8080 with Khan Academy next to Wikipedia and the others.
+3. Download (168 GB; ~8 h at 50 Mbit/s, ~1.5 days at 10 Mbit/s), inside the library folder. Safe to stop and re-run - it resumes:
+       bash "<kit>/4-download-khan-academy.sh"          (Spanish: add  es , French: add  fr )
+4. Open it in the Library Search app. Without the app:  bash "<kit>/5-start-offline-library-in-firefox.sh"
+   - Firefox opens http://localhost:8080 with Khan Academy next to Wikipedia and the others.
 5. If videos don't play:  sudo apt-get install ubuntu-restricted-extras   then restart Firefox.
    If pages look broken, update Firefox:  sudo apt-get update && sudo apt-get install firefox
 6. Other devices (kids' laptops/phones) on the same Wi-Fi or cable open the address the start script prints.
@@ -161,33 +172,33 @@ in the Document Viewer at the right page, articles open inside the app.
 
        bash 6-install-or-update-search-app.sh
 
-   - With internet it downloads the newest version from GitHub. Without internet, copy the
-     `library-search-linux-ia32-vX.Y.Z.tar.gz` file (and `6-install-or-update-search-app.sh`) from a USB stick
-     into this folder and run:  `bash 6-install-or-update-search-app.sh library-search-linux-ia32-vX.Y.Z.tar.gz`
+   - With internet it downloads the newest version from GitHub. On a fresh 16.04 computer (old certificates)
+     or without internet, get the `library-search-linux-ia32-vX.Y.Z.tar.gz` file and `6-install-or-update-search-app.sh`
+     from the GitHub release page in Firefox, or from a USB stick, put both in one folder and run:
+     `bash 6-install-or-update-search-app.sh library-search-linux-ia32-vX.Y.Z.tar.gz`
    - Later versions install themselves: when the computer is online, the app downloads a new version in the
      background and installs it when you close the app (switch it off under **Settings -> Updates**). Without
      internet, update from a USB stick with the same command. Don't use sudo.
    - The installer adds **Library Search** to the app menu and asks whether to put its icon in the sidebar
      (answer Y). Later: `bash 6-install-or-update-search-app.sh --launcher` re-creates it, `--remove-launcher` removes it.
-   - The app doesn't have to live in this folder: `--dir <folder>` installs it anywhere. If it can't find the
+   - The app doesn't have to live in the library folder: `--dir <folder>` installs it anywhere. If it can't find the
      books next to itself, it asks for the library folder on first start (also under **Library -> Library folders**,
      where a USB drive or a second folder can be added).
    - **Settings** (the gear button at the top) has light or dark mode - with a choice of dark colors and how dark -
      updates, the app's version, and a **Guide** (Settings -> Help -> Open the guide) that explains how the app works,
      how the library folder must look, and what to do when something goes wrong. It works without internet.
-2. Start it: click **Library Search** in the sidebar (or search for it in the Dash), double-click
-   **6 · Search the library** here (first time: right-click -> Properties -> Permissions -> "Allow executing file
-   as program"), or run  `bash 6-search-the-library.sh`.
+2. Start it: click **Library Search** in the sidebar (or search for it in the Dash), or run
+   `bash "<kit>/6-search-the-library.sh"`.
    It starts the offline Wikipedia reader by itself if step 3 or 4 was done - no need to run step 5 first.
 3. The first time, the app offers to **build the book index**: it reads every PDF once (30-90 minutes on the
    CF-30; the computer stays usable). You can stop it any time and it continues later. After adding new books,
-   open **Library** in the app and click **Update index** (or run  `bash 6-build-search-index.sh`).
+   open **Library** in the app and click **Update index** (or run  `bash "<kit>/6-build-search-index.sh"`).
 
 - Needs `pdftotext` (part of Ubuntu; if missing:  `sudo apt-get install poppler-utils`).
 - Old scanned books without a text layer can't be searched inside - the app lists them under **Library**;
   you can still find them by title.
 - If the app window won't open, use the simple version in Firefox (same search):
-  `bash 6-search-the-library.sh --firefox`. Problems are logged in the app folder under `logs/launcher.log`.
+  `bash "<kit>/6-search-the-library.sh" --firefox`. Problems are logged in the app folder under `logs/launcher.log`.
 
 ## Reading the books
 - PDFs: Ubuntu's built-in Document Viewer (Evince) or Firefox.

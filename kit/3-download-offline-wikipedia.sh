@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 # OPTIONAL: offline encyclopedias (Kiwix .zim files) + the kiwix-serve reader for Ubuntu 16.04.
-# Run:  bash 3-download-offline-wikipedia.sh      Then read them with:  bash 5-start-offline-library-in-firefox.sh
-# Put a # in front of any "get" line you don't want. Re-run to resume interrupted downloads.
-cd "$(dirname "$(readlink -f "$0")")" || exit 1
+# Run it inside your library folder, or name the folder:  bash 3-download-offline-wikipedia.sh "/path/to/your library"
+# Then read them in the Library Search app, or with:  bash 5-start-offline-library-in-firefox.sh
+# Put a # in front of any "get" line you don't want (this script comes with the app: an app update undoes such edits).
+# Re-run to resume interrupted downloads.
+KIT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+. "$KIT_DIR/library-folder.sh" && pick_library "$@" || exit 1
+shift "$LIBRARY_SHIFT"; cd "$LIBRARY" || exit 1
 DIR="15 Offline Encyclopedias (Kiwix)"; mkdir -p "$DIR"
 MIRROR="https://download.kiwix.org/zim"
 command -v curl >/dev/null || { echo "Install curl first:  sudo apt-get install curl"; exit 1; }
@@ -59,5 +63,5 @@ get libretexts     libretexts.org_en_k12_                 1   # K-12 textbooks
 # get wikipedia    wikipedia_en_all_maxi_               119   # ALL English Wikipedia with images
 # Khan Academy (168 GB): use  bash 4-download-khan-academy.sh  instead (better resume + checks)
 
-echo; echo "Done. To read: bash 5-start-offline-library-in-firefox.sh"
+echo; echo "Done. To read: bash \"$KIT_DIR/5-start-offline-library-in-firefox.sh\" \"$LIBRARY\""
 read -n 1 -s -r -p "Press any key to close."; echo

@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Khan Academy (English, all subjects, ~168 GB) for offline use in Firefox via kiwix-serve - Ubuntu 16.04+.
-# Run:  bash 4-download-khan-academy.sh        Read it:  bash 5-start-offline-library-in-firefox.sh
+# Run it inside your library folder, or name the folder:  bash 4-download-khan-academy.sh "/path/to/your library"
+# Read it in the Library Search app, or with:  bash 5-start-offline-library-in-firefox.sh
 # Safe to stop (Ctrl+C) and re-run: the download resumes where it left off.
-cd "$(dirname "$(readlink -f "$0")")" || exit 1
+KIT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+. "$KIT_DIR/library-folder.sh" && pick_library "$@" || exit 1
+shift "$LIBRARY_SHIFT"; cd "$LIBRARY" || exit 1
 DIR="15 Offline Encyclopedias (Kiwix)"; mkdir -p "$DIR"
-LANGCODE="${1:-en}"     # optional: bash 4-download-khan-academy.sh es   (Spanish 150 GB, French 94 GB)
+LANGCODE="${1:-en}"     # optional, after the folder: bash 4-download-khan-academy.sh es   (Spanish 150 GB, French 94 GB)
 MIRROR="https://download.kiwix.org/zim/other"
 command -v curl >/dev/null || { echo "Install curl first:  sudo apt-get install curl"; exit 1; }
 
@@ -17,7 +20,7 @@ case "$fstype" in msdos|vfat)
 
 FILE=$(curl -sL "$MIRROR/" | grep -oE "khanacademy_${LANGCODE}_all_[0-9-]+\.zim" | sort -u | tail -1)
 [ -z "$FILE" ] && { echo "!! Couldn't find the Khan Academy file on $MIRROR (internet or certificate problem?"
-                    echo "   If certificates: sudo bash 1-fix-https-certificates.sh)"; exit 1; }
+                    echo "   If certificates: sudo bash \"$KIT_DIR/1-fix-https-certificates.sh\")"; exit 1; }
 OUT="$DIR/$FILE"
 TOTAL=$(curl -sIL "$MIRROR/$FILE" | tr -d '\r' | awk 'tolower($1)=="content-length:"{v=$2} END{print v+0}')
 HAVE=$( [ -f "$OUT" ] && stat -c %s "$OUT" || echo 0 )
@@ -53,7 +56,7 @@ done
 
 # 4) Sanity check: a valid ZIM file starts with the bytes 5A 49 4D 04
 if [ "$(head -c 4 "$OUT" | od -An -tx1 | tr -d ' \n')" = "5a494d04" ]; then
-  echo "File looks valid. Start the library with:  bash 5-start-offline-library-in-firefox.sh"
+  echo "File looks valid. Open it in the Library Search app, or:  bash \"$KIT_DIR/5-start-offline-library-in-firefox.sh\" \"$LIBRARY\""
 else
   echo "!! The file doesn't look like a ZIM file - delete it and re-run."
 fi
