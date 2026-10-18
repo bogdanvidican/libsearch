@@ -3,7 +3,8 @@
 # download goes in the library folder, which must be outside the app so deleting or reinstalling the app keeps it.
 #   pick_library "$@"   sets LIBRARY (absolute) and LIBRARY_SHIFT (1 when the first argument was the folder, else 0)
 # The library folder is the first argument when that is an existing folder, else the current folder when it
-# already holds numbered topic folders ("01 Medicine", "15 Offline Encyclopedias (Kiwix)"). Needs KIT_DIR.
+# already holds numbered topic folders ("01 Medicine", "15 Offline Encyclopedias (Kiwix)"). A first argument with
+# a "/" that is no folder stops it (a typo must not send the downloads elsewhere). Needs KIT_DIR.
 
 # The app's folder: the one holding dist/ (installed app) or the git checkout. Unknown layout: the kit folder itself.
 app_home() {
@@ -23,6 +24,9 @@ pick_library() {
   LIBRARY_SHIFT=0
   if [ -n "$1" ] && [ -d "$1" ]; then
     lib="$1"; LIBRARY_SHIFT=1
+  elif [ "${1#*/}" != "$1" ]; then  # has a "/", so it was meant as a folder - but there is none (a typo?)
+    echo "!! There is no folder \"$1\". Check the name, or start this inside your library folder without naming it."
+    return 1
   elif ls -d [0-9][0-9]\ */ >/dev/null 2>&1; then
     lib="."
   else

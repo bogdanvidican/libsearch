@@ -16,6 +16,7 @@ let base: string;
 let server: http.Server;
 let browserBin: string; // a no-op firefox
 let offlineBin: string; // no-op firefox + a curl that always fails (scripts 3 and 4 would go to download.kiwix.org)
+let oldCertsBin: string; // a curl that fails like Ubuntu 16.04's with expired certificates (error 60)
 let caseNo = 0;
 
 function copyDir(src: string, dst: string) {
@@ -66,10 +67,10 @@ function kitCopy(lists: { main?: string; linux?: string } = {}): Case {
 }
 
 /** Runs a kit script with bash. Async: the test HTTP server lives in this process. */
-function run(file: string, args: string[], opts: { cwd: string; offline?: boolean }): Promise<{ code: number; out: string }> {
+function run(file: string, args: string[], opts: { cwd: string; offline?: boolean; bin?: string }): Promise<{ code: number; out: string }> {
   return new Promise((resolve) => {
     const env = Object.assign({}, process.env, {
-      PATH: `${opts.offline ? offlineBin : browserBin}${path.delimiter}${process.env.PATH}`,
+      PATH: `${opts.bin || (opts.offline ? offlineBin : browserBin)}${path.delimiter}${process.env.PATH}`,
       LIBRARY_KIT_CHECK_URL: `${base}/`,
     });
     const child = spawn('bash', [file, ...args], { cwd: opts.cwd, env, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -105,6 +106,8 @@ beforeAll(async () => {
   offlineBin = path.join(tmp, 'bin-offline');
   writeExe(path.join(offlineBin, 'firefox'), '#!/bin/sh\nexit 0\n');
   writeExe(path.join(offlineBin, 'curl'), `#!/bin/sh\necho "$*" >>"${path.join(tmp, 'curl.log')}"\nexit 7\n`);
+  oldCertsBin = path.join(tmp, 'bin-old-certs');
+  writeExe(path.join(oldCertsBin, 'curl'), '#!/bin/sh\necho "curl: (60) SSL certificate problem: certificate has expired" >&2\nexit 60\n');
   server = http.createServer((req, res) => {
     const u = req.url || '';
     if (u.indexOf('/pdf/') === 0) {
@@ -182,6 +185,15 @@ describe('library folder', () => {
     expect(fs.readdirSync(books)).toEqual(['01 Medicine']);
   });
 
+  it('stops on a folder argument that does not exist, instead of using the current library', () => {
+    const c = kitCopy();
+    const typo = path.join(c.root, 'Libary');
+    const r = pick(c.kit, [typo], c.lib);
+    expect(r.code).toBe(1);
+    expect(r.out).toContain(`!! There is no folder "${typo}". Check the name, or start this inside your library folder without naming it.`);
+    expect(fs.existsSync(typo)).toBe(false);
+  });
+
   it('accepts the library that holds the app', () => {
     const pkg = path.join(tmp, 'holds');
     const pkgKit = path.join(pkg, 'library-search-app', 'dist', 'library-search-linux-ia32', 'resources', 'app', 'kit');
@@ -231,6 +243,21 @@ describe('2-download-pdf-books.sh', () => {
       expect(fs.existsSync(path.join(c.lib, f)), f).toBe(true);
     }
     expect(listFiles(c.lib).filter((f) => f.indexOf('\r') >= 0)).toEqual([]);
+  });
+
+  it('reads a local list saved with a byte order mark (Windows Notepad)', async () => {
+    const c = kitCopy();
+    fs.writeFileSync(path.join(c.lib, 'booklist-local.txt'), `﻿F|99 Mine|First.pdf|${base}/pdf/first.pdf\n`);
+    const r = await run(path.join(c.kit, '2-download-pdf-books.sh'), [c.lib], { cwd: c.root });
+    expect(r.code, r.out).toBe(0);
+    expect(fs.existsSync(path.join(c.lib, '99 Mine', 'First.pdf')), r.out).toBe(true);
+  });
+
+  it('points to the certificate fix inside the app when curl says the certificates are too old', async () => {
+    const c = kitCopy();
+    const r = await run(path.join(c.kit, '2-download-pdf-books.sh'), [c.lib], { cwd: c.root, bin: oldCertsBin });
+    expect(r.code).toBe(1);
+    expect(r.out).toContain(`sudo bash "${path.join(c.kit, '1-fix-https-certificates.sh')}"`);
   });
 
   it('lists a failed book from the local list for Firefox', async () => {

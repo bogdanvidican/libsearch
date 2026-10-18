@@ -18,7 +18,7 @@ fi
 curl -sS -o /dev/null --connect-timeout 20 -A "$UA" "${LIBRARY_KIT_CHECK_URL:-https://www.gutenberg.org/}" 2>/tmp/crl_test.$$; rc=$?
 if [ $rc -eq 60 ] || [ $rc -eq 35 ] || [ $rc -eq 77 ]; then
   echo "!! This computer's security certificates are too old to open modern HTTPS sites (curl error $rc)."
-  echo "   Run once:   sudo bash 1-fix-https-certificates.sh   then start this script again."
+  echo "   Run once:   sudo bash \"$KIT_DIR/1-fix-https-certificates.sh\"   then start this script again."
   rm -f /tmp/crl_test.$$; exit 1
 elif [ $rc -ne 0 ]; then
   echo "!! Can't reach the internet (curl error $rc): $(cat /tmp/crl_test.$$)"; rm -f /tmp/crl_test.$$; exit 1
@@ -107,7 +107,8 @@ while IFS='|' read -r t a b c; do
     S) scrape "$a" "$b" "$c";;
     A) archive_item "$a" "$b";;
   esac
-done < <(for l in "${LISTS[@]}"; do cat "$l"; echo; done | tr -d '\r' | grep -v '^#')  # echo: a list without a final newline
+# Per list: drop a byte order mark (Windows Notepad), and end with a newline (a list saved without a final one).
+done < <(for l in "${LISTS[@]}"; do sed $'1s/^\xef\xbb\xbf//' "$l"; echo; done | tr -d '\r' | grep -v '^#')
 
 # ---- failures -> a clickable page for Firefox (a real browser gets past most bot checks) ----
 HTML="2-failed-downloads-open-in-firefox.html"
