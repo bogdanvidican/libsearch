@@ -3,7 +3,7 @@
 import { act } from 'react-dom/test-utils';
 import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { BooksOverview, DownloadProgress, ManualItem, Status } from '../../src/shared/api';
+import type { BooksOverview, DownloadProgress, EncyclopediasOverview, ManualItem, Status } from '../../src/shared/api';
 import { api } from '../../src/ui/api';
 import { AppContext, AppCtx } from '../../src/ui/context';
 import { GetBooks } from '../../src/ui/components/GetBooks';
@@ -33,8 +33,8 @@ function overview(o: Partial<BooksOverview> = {}): BooksOverview {
   };
 }
 
-function ctxWith(books: DownloadProgress, extra: Partial<AppCtx> = {}): AppCtx {
-  const status = { downloads: { books, zims: progress() }, roots: ['/home/me/Library'] } as unknown as Status;
+function ctxWith(books: DownloadProgress, extra: Partial<AppCtx> = {}, zims: DownloadProgress = progress()): AppCtx {
+  const status = { downloads: { books, zims }, roots: ['/home/me/Library'] } as unknown as Status;
   return {
     status,
     statusError: null,
@@ -181,6 +181,79 @@ describe('Save by hand', () => {
       (el.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
     });
     expect(tick).toHaveBeenCalledWith('M|01 Medicine|https://ex.org/vet', true);
+    done();
+  });
+});
+
+describe('Encyclopedias', () => {
+  function zimsOverview(o: Partial<EncyclopediasOverview> = {}): EncyclopediasOverview {
+    return {
+      destination: '/home/me/Library',
+      kiwixDir: '/home/me/Library/15 Offline Encyclopedias (Kiwix)',
+      fat32: false,
+      freeBytes: 300 * 1073741824,
+      reader: 'ok',
+      items: [
+        { id: 'wikipedia_en_medicine_maxi_', title: 'WikiMed (medical encyclopedia)', approxGb: 2, defaultOn: true, selected: false, state: 'ready', file: 'x.zim', have: 2 * 1073741824 },
+        { id: 'khanacademy_en_all_', title: 'Khan Academy (English, all subjects)', approxGb: 168, defaultOn: false, selected: true, state: 'partial', file: 'k.zim.part', have: 2.5 * 1073741824 },
+        { id: 'phet_en_all_', title: 'PhET science simulations', approxGb: 1, defaultOn: true, selected: false, state: 'missing', have: 0, failure: { code: 'dns', reason: 'The site’s address could not be found.' } },
+      ],
+      ...o,
+    };
+  }
+
+  it('shows each encyclopedia with its size and state', async () => {
+    vi.spyOn(api, 'zims').mockResolvedValue(zimsOverview());
+    const { el, done } = await show(ctxWith(progress()), overview(), 'zims');
+    expect(el.querySelector('[aria-current="page"]')!.textContent).toBe(S.books.tabs.zims);
+    for (const t of ['WikiMed (medical encyclopedia)', 'Khan Academy (English, all subjects)', 'PhET science simulations']) expect(el.textContent).toContain(t);
+    expect(el.textContent).toContain(S.books.zims.ready);
+    expect(el.textContent).toContain(S.books.zims.partial('2.5 GB'));
+    expect(el.textContent).toContain(S.books.zims.about(168));
+    expect(el.textContent).toContain('The site’s address could not be found.');
+    const boxes = Array.from(el.querySelectorAll('input[type="checkbox"]')) as HTMLInputElement[];
+    // Already here: ticked and greyed out (part of the library, nothing to download).
+    expect(boxes.map((b) => [b.checked, b.disabled])).toEqual([
+      [true, true],
+      [true, false],
+      [false, false],
+    ]);
+    done();
+  });
+
+  it('downloads the selected ones', async () => {
+    vi.spyOn(api, 'zims').mockResolvedValue(zimsOverview());
+    const start = vi.spyOn(api, 'zimsDownload').mockResolvedValue(progress({ running: true, phase: 'checking' }));
+    const { el, done } = await show(ctxWith(progress()), overview(), 'zims');
+    await act(async () => {
+      (el.querySelectorAll('input[type="checkbox"]')[2] as HTMLInputElement).click();
+    });
+    await act(async () => {
+      button(el, S.books.zims.download(2, 169))!.click();
+    });
+    expect(start).toHaveBeenCalledWith(['khanacademy_en_all_', 'phet_en_all_']);
+    done();
+  });
+
+  it('shows the FAT32 warning and what happens to the reader', async () => {
+    vi.spyOn(api, 'zims').mockResolvedValue(zimsOverview({ fat32: true, reader: 'missing' }));
+    const { el, done } = await show(ctxWith(progress()), overview(), 'zims');
+    expect(el.textContent).toContain(S.books.zims.fat32);
+    expect(el.textContent).toContain(S.books.zims.readerMissing);
+    done();
+  });
+
+  it('shows a running download with its try number, Stop, and that it continues after a restart', async () => {
+    vi.spyOn(api, 'zims').mockResolvedValue(zimsOverview());
+    const cancel = vi.spyOn(api, 'zimsCancel').mockResolvedValue(progress());
+    const running = progress({ running: true, phase: 'downloading', done: 0, total: 1, currentFile: 'khanacademy_en_all_2023-03.zim', fileReceived: 3 * 1073741824, fileTotal: 168 * 1073741824, speed: 2 * 1048576, attempt: 3 });
+    const { el, done } = await show(ctxWith(progress(), {}, running), overview(), 'zims');
+    expect(el.textContent).toContain(S.books.zims.attempt(3));
+    expect(el.textContent).toContain(S.books.zims.continues);
+    await act(async () => {
+      button(el, S.books.stop)!.click();
+    });
+    expect(cancel).toHaveBeenCalled();
     done();
   });
 });

@@ -407,6 +407,25 @@ export const S = {
     markDone: 'Mark as done',
     openFailed: 'Firefox could not be started.',
     lastRun: (when: string) => `Last download: ${when}`,
+    zims: {
+      title: 'Encyclopedias',
+      intro:
+        'Offline Wikipedia, WikiMed, Khan Academy and the Q&A sites, read by Kiwix. They are big: tick the ones you want, then click Download.',
+      goInto: 'They go into:',
+      fat32: 'This drive is FAT32: files of 4 GB or more can’t go on it. For the big ones, keep the library on an ext4 or exFAT drive.',
+      readerMissing: 'The Kiwix reader (kiwix-serve) is downloaded first; it is small.',
+      readerUnsupported: 'On this computer, install the Kiwix reader (kiwix-tools) yourself: the app downloads it on Linux only.',
+      about: (gb: number) => `about ${gb} GB`,
+      ready: 'On this computer',
+      partial: (have: string) => `${have} downloaded - continues where it stopped`,
+      missing: 'Not downloaded',
+      download: (n: number, gb: number) =>
+        n ? `Download ${formatNumber(n)} selected (about ${formatNumber(gb)} GB)` : 'Tick the ones to download',
+      attempt: (n: number) => `Try ${formatNumber(n)}: the connection dropped, so it continues from where it stopped`,
+      continues: 'If the app closes, the download continues by itself the next time it starts.',
+      finished: (d: number, s: number, f: number) =>
+        `Finished: ${formatNumber(d)} downloaded, ${formatNumber(s)} already here, ${formatNumber(f)} failed.`,
+    },
     manual: {
       title: 'Books to save by hand',
       intro:

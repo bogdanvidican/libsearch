@@ -209,6 +209,21 @@ function status() {
 
 const IDLE_DOWNLOAD = { running: false, phase: 'idle', done: 0, total: 0, currentFile: '', fileReceived: 0, fileTotal: 0, bytes: 0, speed: 0, downloaded: 0, skipped: 0, failed: 0 };
 
+const GIB = 1073741824;
+const ZIMS = {
+  destination: '/home/you/Community Library',
+  kiwixDir: '/home/you/Community Library/15 Offline Encyclopedias (Kiwix)',
+  fat32: false,
+  freeBytes: 380 * GIB,
+  reader: 'ok',
+  items: [
+    { id: 'wikipedia_en_medicine_maxi_', title: 'WikiMed (medical encyclopedia)', approxGb: 2, defaultOn: true, selected: false, state: 'ready', file: 'wikipedia_en_medicine_maxi_2026-01.zim', have: 2.1 * GIB },
+    { id: 'wikipedia_en_top1m_maxi_', title: 'Wikipedia (English, the top 1 million articles)', approxGb: 46, defaultOn: true, selected: true, state: 'partial', have: 12.4 * GIB },
+    { id: 'phet_en_all_', title: 'PhET science simulations', approxGb: 1, defaultOn: true, selected: false, state: 'missing', have: 0, failure: { code: 'dns', reason: 'The site\u2019s address could not be found. The site may be gone, or blocked on this network.' } },
+    { id: 'khanacademy_en_all_', title: 'Khan Academy (English, all subjects; script 4 downloads it)', approxGb: 168, defaultOn: false, selected: false, state: 'missing', have: 0 },
+  ],
+};
+
 const MANUAL = [
   { id: 'M|01 Medicine|https://oxfamilibrary.openrepository.com/handle/10546/123108', folder: '01 Medicine', title: 'Where There Is No Vet (Oxfam)', url: 'https://oxfamilibrary.openrepository.com/handle/10546/123108', how: 'button', note: '6 PDF parts: save each one.', done: false, auto: true },
   { id: 'M|04 Food Preservation|https://www.fao.org/3/t1838e/t1838e00.htm', folder: '04 Food Preservation', title: 'FAO Grain Storage', url: 'https://www.fao.org/3/t1838e/t1838e00.htm', how: 'print-to-pdf', note: '', done: true, auto: false },
@@ -374,6 +389,8 @@ http
       }
       if (p === '/api/books' || p === '/api/books/done') return json(res, 200, booksOverview(), 80);
       if (p === '/api/books/download' || p === '/api/books/cancel') return json(res, 200, IDLE_DOWNLOAD, 80);
+      if (p === '/api/zims') return json(res, 200, ZIMS, 80);
+      if (p === '/api/zims/download' || p === '/api/zims/cancel') return json(res, 200, IDLE_DOWNLOAD, 80);
       if (p === '/api/manual' || p === '/api/manual/done') return json(res, 200, MANUAL, 80);
       if (p === '/api/open-url') return json(res, 200, { ok: true, how: 'firefox' }, 80);
       return json(res, 404, { error: { kind: 'error', code: 'not_found', message: 'Unknown endpoint ' + p } });

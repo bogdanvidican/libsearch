@@ -5,6 +5,7 @@ import type {
   BooksOverview,
   BuildProgress,
   DownloadProgress,
+  EncyclopediasOverview,
   Category,
   DocSummary,
   IndexStatus,
@@ -136,6 +137,10 @@ export const api = {
   booksCancel: () => request<DownloadProgress>('POST', '/api/books/cancel', {}),
   /** "Mark as done": the book was saved by hand (or undo it). */
   booksDone: (id: string, done: boolean) => request<BooksOverview>('POST', '/api/books/done', { id, done }),
+  /** Library -> Get books -> Encyclopedias. */
+  zims: () => request<EncyclopediasOverview>('GET', '/api/zims'),
+  zimsDownload: (ids: string[]) => request<DownloadProgress>('POST', '/api/zims/download', { ids }),
+  zimsCancel: () => request<DownloadProgress>('POST', '/api/zims/cancel', {}),
   /** Library -> Get books -> Save by hand. */
   manual: () => request<ManualItem[]>('GET', '/api/manual'),
   manualDone: (id: string, done: boolean) => request<ManualItem[]>('POST', '/api/manual/done', { id, done }),

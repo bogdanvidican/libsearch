@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Check, CircleCheck, Download, ExternalLink, ListChecks, ListOrdered, RefreshCw, Square, TriangleAlert } from 'lucide-react';
-import type { BooksOverview, DownloadFailure, DownloadProgress, ManualItem } from '../../shared/api';
+import { Check, CircleCheck, Download, ExternalLink, Globe, ListChecks, ListOrdered, RefreshCw, Square, TriangleAlert } from 'lucide-react';
+import type { BooksOverview, DownloadFailure, DownloadProgress, EncyclopediasOverview, ManualItem } from '../../shared/api';
 import { api, ApiError } from '../api';
 import { ToastInput, useApp } from '../context';
 import { formatBytes, formatDate, percent } from '../format';
@@ -11,7 +11,7 @@ import { CardHead } from './CardHead';
 import { NoticeBox } from './NoticeBox';
 
 /** The tabs that exist so far, in order. */
-const TABS: BooksTab[] = ['lists', 'manual'];
+const TABS: BooksTab[] = ['lists', 'manual', 'zims'];
 
 export function errorToast(e: unknown): ToastInput {
   if (e instanceof ApiError) return { kind: 'error', message: e.notice.message, fix: e.notice.fix };
@@ -38,7 +38,98 @@ export function GetBooks({ tab }: { tab: BooksTab }) {
       ) : null}
       {current === 'lists' ? <BookLists /> : null}
       {current === 'manual' ? <ManualList /> : null}
+      {current === 'zims' ? <Encyclopedias /> : null}
     </div>
+  );
+}
+
+/** Get books -> Encyclopedias: tick the .zim collections to download; big ones continue across restarts. */
+function Encyclopedias() {
+  const app = useApp();
+  const job = app.status && app.status.downloads ? app.status.downloads.zims : null;
+  const running = !!job && job.running;
+  const runKey = job ? (running ? 'running' : String(job.finishedAt || 0)) : '';
+  const { data, error } = useLoad<EncyclopediasOverview>('zims:' + runKey + ':' + (app.status ? app.status.roots.join('|') : ''), () => api.zims());
+  const [picked, setPicked] = useState<Record<string, boolean> | null>(null);
+  if (!data) return error ? <NoticeBox kind="error" title={error.message} fix={error.fix} /> : null;
+  const z = S.books.zims;
+  const chosen = (id: string) => {
+    const item = data.items.filter((i) => i.id === id)[0];
+    if (!item || item.state === 'ready') return false;
+    return picked && picked[id] !== undefined ? picked[id] : item.selected;
+  };
+  const ids = data.items.filter((i) => chosen(i.id)).map((i) => i.id);
+  const gb = data.items.filter((i) => chosen(i.id)).reduce((n, i) => n + i.approxGb, 0);
+  const fail = (e: unknown) => app.toast(errorToast(e));
+  const start = () => {
+    api.zimsDownload(ids).then(app.refreshStatus, fail);
+  };
+  const stop = () => {
+    api.zimsCancel().then(app.refreshStatus, fail);
+  };
+  return (
+    <section className="card">
+      <CardHead icon={<Globe size={22} />} title={z.title} tone={running ? 'busy' : undefined} />
+      <p className="card__text">{z.intro}</p>
+      {data.problem ? (
+        <NoticeBox kind="error" title={data.problem.message} fix={data.problem.fix} />
+      ) : (
+        <p className="card__text">
+          <strong>{z.goInto}</strong> <span className="books__path">{data.kiwixDir}</span>
+          {data.freeBytes !== undefined ? ' · ' + S.books.free(formatBytes(data.freeBytes)) : ''}
+        </p>
+      )}
+      {data.fat32 ? <NoticeBox kind="warning" compact title={z.fat32} /> : null}
+      {data.reader === 'missing' ? <NoticeBox kind="info" compact title={z.readerMissing} /> : null}
+      {data.reader === 'unsupported' ? <NoticeBox kind="warning" compact title={z.readerUnsupported} /> : null}
+      {running && job ? (
+        <>
+          <JobProgress job={job} onStop={stop} />
+          {job.attempt && job.attempt > 1 ? <p className="card__fix">{z.attempt(job.attempt)}</p> : null}
+          <p className="card__fix">{z.continues}</p>
+        </>
+      ) : (
+        <>
+          {job && job.notice ? <NoticeBox kind={job.notice.kind} compact title={job.notice.message} fix={job.notice.fix} /> : null}
+          {job && job.phase === 'done' ? (
+            <p className="card__ok">
+              <CircleCheck size={18} aria-hidden="true" />
+              {z.finished(job.downloaded, job.skipped, job.failed)}
+            </p>
+          ) : null}
+          {job && job.phase === 'cancelled' ? <NoticeBox kind="info" compact title={S.books.stopped} /> : null}
+        </>
+      )}
+      {/* Above the list: there are more than twenty encyclopedias to scroll through. */}
+      {!running && !data.problem ? (
+        <div className="btn-row">
+          <button type="button" className="btn btn--primary btn--lg" disabled={!ids.length} onClick={start}>
+            <Download size={20} aria-hidden="true" />
+            {z.download(ids.length, gb)}
+          </button>
+        </div>
+      ) : null}
+      <ul className="failures" role="list">
+        {data.items.map((i) => (
+          <li key={i.id} className={'failure manual' + (i.state === 'ready' ? ' manual--done' : '')}>
+            <label className="manual__check">
+              <input
+                type="checkbox"
+                checked={i.state === 'ready' || chosen(i.id)}
+                disabled={i.state === 'ready' || running}
+                onChange={(e) => setPicked(Object.assign({}, picked || {}, { [i.id]: e.target.checked }))}
+              />
+              <span className="failure__file">{i.title}</span>
+            </label>
+            <span className="failure__folder">
+              {z.about(i.approxGb)} · {i.state === 'ready' ? z.ready : i.state === 'partial' ? z.partial(formatBytes(i.have)) : z.missing}
+            </span>
+            {i.failure && i.state !== 'ready' ? <span className="failure__reason">{i.failure.reason}</span> : null}
+          </li>
+        ))}
+      </ul>
+      <p className="card__fix">{S.books.needsInternet}</p>
+    </section>
   );
 }
 
